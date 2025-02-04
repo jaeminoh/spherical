@@ -1,4 +1,9 @@
+name = "AntigenDesign"
+
 [deps]
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 DelimitedFiles = "8bb1440f-4735-579b-a4ab-409b98df4dab"
+GenomicAnnotations = "4f8a0a0a-376d-5ac0-ab14-e88793df67f0"
+JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
 MIToS = "51bafb47-8a16-5ded-8b04-24ef4eede0b5"
+PkgTemplates = "14b8a8f1-9102-5b29-a752-f990bacb7fe1"
