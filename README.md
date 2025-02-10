@@ -1,5 +1,7 @@
 # SPHERICAL
 
+- Python 3.13
+
 ## TAMU FASTER Commands
 
 - `showquota`: checking current file quota
