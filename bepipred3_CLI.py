@@ -1,7 +1,6 @@
-### IMPORTS AND STATIC PATHS ###
 from pathlib import Path
 import argparse
-from src.bp3 import bepipred3
+from spherical.bp3 import bepipred3
 import zipfile
 
 
@@ -21,7 +20,7 @@ parser.add_argument(
     dest="out_dir",
     type=Path,
     help="Output directory to store B-cell epitope predictions.",
-    default="result/",
+    default="data/result/",
 )
 parser.add_argument(
     "-pred",

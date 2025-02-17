@@ -1,5 +1,6 @@
 from Bio import SeqIO
 import re
+import csv
 
 
 def read_fasta(fname: str):
@@ -46,10 +47,16 @@ def remove_lowercase(text):
     return re.sub(r"[a-z]", "", text)
 
 
-def file_reader(_input):
-    content_arry = []
-    f = open(_input, "r")
-    if f.mode == "r":
-        content_arry = f.read().splitlines()
-        f.close()
-    return content_arry
+def where_uppercase(seq: str):
+    """WARNING: ChimeraX supports 1-based indexing."""
+    positions = []
+    for i, letter in enumerate(seq):
+        if letter.isupper():
+            positions.append(i + 1)
+    return positions
+
+
+def save_csv(result: list, path: str):
+    with open(path, "w") as f:
+        writer = csv.writer(f)
+        writer.writerow(result)
