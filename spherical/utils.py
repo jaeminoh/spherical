@@ -1,6 +1,10 @@
-from Bio import SeqIO
 import re
 import csv
+
+from Bio import SeqIO
+from Bio.PDB.MMCIFParser import MMCIFParser
+from Bio.PDB import Residue
+import numpy as np
 
 
 def read_fasta(fname: str):
@@ -60,3 +64,58 @@ def save_csv(result: list, path: str):
     with open(path, "w") as f:
         writer = csv.writer(f)
         writer.writerow(result)
+
+
+def read_cif(path: str = "data/alphafold/fold_2025_02_10_08_03_model_0.cif"):
+    # FastMMCIFParser does not parses residues.
+    st = MMCIFParser().get_structure("tmp", path)
+    return st
+
+
+def get_first_atom(res: Residue):
+    atom = next(res.get_atoms())  # `get_atoms` method returns a generator
+    return atom
+
+
+def rr_distance(r1: Residue, r2: Residue):
+    """Compute residue-residue distance. \n
+
+    Reference: https://rbvi.github.io/chimerax-recipes/rrdist/rrdist.html
+    """
+    a1 = get_first_atom(r1).coord
+    a2 = get_first_atom(r2).coord
+    return np.linalg.norm(a1 - a2)  # Euclidean distance (3D)
+
+
+def ss_distance(rr, pp1, pp2):
+    """Compute minimum `rr_distance` between two structures."""
+    distance = np.inf
+    for p1 in pp1:
+        for p2 in pp2:
+            if (d := rr_distance(rr[p1], rr[p2])) < distance:
+                distance = d
+    return distance
+
+
+def _merge_if_close(rr, epitopes, thr):
+    merged_epitopes = []
+    while epitopes:
+        pp1 = epitopes.pop(0)
+        i = 0
+        while i < len(epitopes):
+            pp2 = epitopes[i]
+            if ss_distance(rr, pp1, pp2) < thr:
+                pp1 = pp1 + pp2
+                epitopes.pop(i)
+            else:
+                i += 1
+        merged_epitopes.append(pp1)
+    return merged_epitopes
+
+
+def group_residues_by_distance(epi_seq: str, path_cif: str, thr: float = 4.0):
+    positions = where_uppercase(epi_seq)
+    st = read_cif(path_cif)
+    rr = list(st.get_residues())
+    epitopes = [[p] for p in positions]
+    return _merge_if_close(rr, epitopes, thr)
