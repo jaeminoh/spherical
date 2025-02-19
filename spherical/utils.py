@@ -17,7 +17,7 @@ def read_gbk(fname: str):
     return seqs
 
 
-def write_fasta_gbk_protein(fname: str):
+def write_fasta_gbk_protein(fname: str, replace_with: str = "X"):
     """
     Extract translated sequence information (.fasta) from genbank file (.gb, .gbk).
     """
@@ -31,7 +31,7 @@ def write_fasta_gbk_protein(fname: str):
                 (id,) = f.qualifiers["protein_id"]
                 id_list.append(id)
                 (protein,) = f.qualifiers["translation"]
-                protein_list.append(re.sub("X", "A", protein))
+                protein_list.append(re.sub("X", replace_with, protein))
     print(f"There are {len(protein_list)} proteins!")
 
     with open("data/rvfv.fasta", "w") as f:
