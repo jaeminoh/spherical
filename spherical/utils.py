@@ -56,7 +56,16 @@ def where_uppercase(seq: str):
     positions = []
     for i, letter in enumerate(seq):
         if letter.isupper():
-            positions.append(i + 1)
+            positions.append(i)
+    return positions
+
+
+def where_lowercase(seq: str):
+    """WARNING: ChimeraX supports 1-based indexing."""
+    positions = []
+    for i, letter in enumerate(seq):
+        if letter.islower():
+            positions.append(i)
     return positions
 
 
@@ -87,7 +96,16 @@ def rr_distance(r1: Residue, r2: Residue):
     return np.linalg.norm(a1 - a2)  # Euclidean distance (3D)
 
 
-def ss_distance(rr, pp1, pp2):
+def rs_distance(r: Residue, rr, pp):
+    """Compute minimum `rr_distance` for a residue and a structure."""
+    distance = np.inf
+    for p in pp:
+        if (d := rr_distance(r, rr[p])) < distance:
+            distance = d
+    return distance
+
+
+def ss_distance(rr: list, pp1: list[int], pp2: list[int]) -> float:
     """Compute minimum `rr_distance` between two structures."""
     distance = np.inf
     for p1 in pp1:
@@ -97,6 +115,7 @@ def ss_distance(rr, pp1, pp2):
     return distance
 
 
+# TODO performance optimization
 def _merge_if_close(rr, epitopes, thr):
     merged_epitopes = []
     while epitopes:
@@ -119,3 +138,22 @@ def group_residues_by_distance(epi_seq: str, path_cif: str, thr: float = 4.0):
     rr = list(st.get_residues())
     epitopes = [[p] for p in positions]
     return _merge_if_close(rr, epitopes, thr)
+
+
+def add_nearby_ones_to_groups(
+    path_cif: str, epi_seq: str, gg: list[list[int]], thr: float
+):
+    st = read_cif(path_cif)
+    rr = list(st.get_residues())
+    nonepi_positions = where_lowercase(epi_seq)
+    gg_len = len(gg)
+    gg_new = []
+    while gg:
+        g = gg.pop(0)
+        for i in nonepi_positions:
+            if rs_distance(rr[i], rr, g) < thr:
+                g.append(i)
+        g.sort()
+        gg_new.append(g)
+    assert gg_len == len(gg_new)  # unit test!
+    return gg_new
