@@ -1,18 +1,19 @@
 import re
 import csv
 
+from beartype import beartype
 from Bio import SeqIO
 from Bio.PDB.MMCIFParser import MMCIFParser
-from Bio.PDB import Residue
+from spherical._types import Atom, Residue, Residues, Structure, Seq
 import numpy as np
 
 
-def read_fasta(fname: str):
+def read_fasta(fname: str):  # just a wrapper
     seqs = SeqIO.parse(fname, "fasta")
     return seqs
 
 
-def read_gbk(fname: str):
+def read_gbk(fname: str):  # just a wrapper
     seqs = SeqIO.parse(fname, "genbank")
     return seqs
 
@@ -39,7 +40,7 @@ def write_fasta_gbk_protein(fname: str, replace_with: str = "X"):
             f.write(">" + id + "\n" + protein + "\n")
 
 
-def remove_lowercase(text):
+def remove_lowercase(text: str) -> str:
     """Removes lowercase letters from a string.
 
     Args:
@@ -51,7 +52,7 @@ def remove_lowercase(text):
     return re.sub(r"[a-z]", "", text)
 
 
-def where_uppercase(seq: str):
+def where_uppercase(seq: Seq) -> list[int]:
     """WARNING: ChimeraX supports 1-based indexing."""
     positions = []
     for i, letter in enumerate(seq):
@@ -60,7 +61,7 @@ def where_uppercase(seq: str):
     return positions
 
 
-def where_lowercase(seq: str):
+def where_lowercase(seq: Seq) -> list[int]:
     """WARNING: ChimeraX supports 1-based indexing."""
     positions = []
     for i, letter in enumerate(seq):
@@ -69,23 +70,35 @@ def where_lowercase(seq: str):
     return positions
 
 
+def convert_indexing(indices: list[int], _from: int, _to: int) -> list[int]:
+    offset = _to - _from
+    indices = [i + offset for i in indices]
+    return indices
+
+
 def save_csv(result: list, path: str):
     with open(path, "w") as f:
         writer = csv.writer(f)
         writer.writerow(result)
 
 
-def read_cif(path: str = "data/alphafold/fold_2025_02_10_08_03_model_0.cif"):
+@beartype
+def read_cif(
+    path: str = "data/alphafold/fold_2025_02_10_08_03_model_0.cif",
+    structure_id: str = "tmp",
+) -> Structure:
     # FastMMCIFParser does not parses residues.
-    st = MMCIFParser().get_structure("tmp", path)
+    st = MMCIFParser().get_structure(structure_id, path)
     return st
 
 
-def get_first_atom(res: Residue):
+@beartype
+def get_first_atom(res: Residue) -> Atom:
     atom = next(res.get_atoms())  # `get_atoms` method returns a generator
     return atom
 
 
+@beartype
 def rr_distance(r1: Residue, r2: Residue):
     """Compute residue-residue distance. \n
 
@@ -96,7 +109,8 @@ def rr_distance(r1: Residue, r2: Residue):
     return np.linalg.norm(a1 - a2)  # Euclidean distance (3D)
 
 
-def rs_distance(r: Residue, rr, pp):
+@beartype
+def rs_distance(r: Residue, rr: Residues, pp: list[int]):
     """Compute minimum `rr_distance` for a residue and a structure."""
     distance = np.inf
     for p in pp:
@@ -105,7 +119,8 @@ def rs_distance(r: Residue, rr, pp):
     return distance
 
 
-def ss_distance(rr: list, pp1: list[int], pp2: list[int]) -> float:
+@beartype
+def ss_distance(rr: Residues, pp1: list[int], pp2: list[int]):
     """Compute minimum `rr_distance` between two structures."""
     distance = np.inf
     for p1 in pp1:
@@ -116,7 +131,10 @@ def ss_distance(rr: list, pp1: list[int], pp2: list[int]) -> float:
 
 
 # TODO performance optimization
-def _merge_if_close(rr, epitopes, thr):
+@beartype
+def _merge_if_close(
+    rr: Residues, epitopes: list[list[int]], thr: float
+) -> list[list[int]]:
     merged_epitopes = []
     while epitopes:
         pp1 = epitopes.pop(0)
@@ -132,19 +150,21 @@ def _merge_if_close(rr, epitopes, thr):
     return merged_epitopes
 
 
-def group_residues_by_distance(epi_seq: str, path_cif: str, thr: float = 4.0):
+# TODO refactor
+@beartype
+def group_residues_by_distance(
+    rr: Residues, epi_seq: Seq, thr: float = 4.0
+) -> list[list[int]]:
     positions = where_uppercase(epi_seq)
-    st = read_cif(path_cif)
-    rr = list(st.get_residues())
     epitopes = [[p] for p in positions]
     return _merge_if_close(rr, epitopes, thr)
 
 
+# TODO refactor
+@beartype
 def add_nearby_ones_to_groups(
-    path_cif: str, epi_seq: str, gg: list[list[int]], thr: float
-):
-    st = read_cif(path_cif)
-    rr = list(st.get_residues())
+    rr: Residues, epi_seq: Seq, gg: list[list[int]], thr: float
+) -> list[list[int]]:
     nonepi_positions = where_lowercase(epi_seq)
     gg_len = len(gg)
     gg_new = []
