@@ -4,6 +4,8 @@ import csv
 from beartype import beartype
 from Bio import SeqIO
 from Bio.PDB.MMCIFParser import MMCIFParser
+from Bio.PDB.PDBParser import PDBParser
+from Bio.PDB import PDBIO, Select
 from spherical._types import Atom, Residue, Residues, Structure, Seq
 import numpy as np
 
@@ -83,6 +85,16 @@ def save_csv(result: list, path: str):
 
 
 @beartype
+def read_pdb(
+    path: str = "data/test_0.pdb",
+    structure_id: str = "tmp",
+) -> Structure:
+    # FastMMCIFParser does not parses residues.
+    st = PDBParser().get_structure(structure_id, path)
+    return st
+
+
+@beartype
 def read_cif(
     path: str = "data/alphafold/fold_2025_02_10_08_03_model_0.cif",
     structure_id: str = "tmp",
@@ -93,8 +105,8 @@ def read_cif(
 
 
 @beartype
-def get_first_atom(res: Residue) -> Atom:
-    atom = next(res.get_atoms())  # `get_atoms` method returns a generator
+def get_first_atom(r: Residue) -> Atom:
+    atom = next(r.get_atoms())  # `get_atoms` method returns a generator
     return atom
 
 
@@ -104,9 +116,9 @@ def rr_distance(r1: Residue, r2: Residue):
 
     Reference: https://rbvi.github.io/chimerax-recipes/rrdist/rrdist.html
     """
-    a1 = get_first_atom(r1).coord
-    a2 = get_first_atom(r2).coord
-    return np.linalg.norm(a1 - a2)  # Euclidean distance (3D)
+    a1 = get_first_atom(r1)
+    a2 = get_first_atom(r2)
+    return a1 - a2  # `-` operator measures atom distance (via overloading)
 
 
 @beartype
@@ -177,3 +189,25 @@ def add_nearby_ones_to_groups(
         gg_new.append(g)
     assert gg_len == len(gg_new)  # unit test!
     return gg_new
+
+
+@beartype
+class _SelectResidues(Select):
+    def __init__(self, residue_list: list[int]):
+        self.residue_list = residue_list
+
+    def accept_residue(self, residue: Residue) -> bool:
+        if residue.id[1] in self.residue_list:
+            return True
+        else:
+            return False
+
+
+def write_selected_residues_to_pdb(
+    st: Structure,
+    residue_list: list[int],
+    out_path: str = "data/test.pdb",
+):
+    io = PDBIO()
+    io.set_structure(st)
+    io.save(out_path, select=_SelectResidues(residue_list))
