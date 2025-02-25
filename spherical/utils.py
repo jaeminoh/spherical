@@ -6,7 +6,7 @@ from Bio import SeqIO
 from Bio.PDB.MMCIFParser import MMCIFParser
 from Bio.PDB.PDBParser import PDBParser
 from Bio.PDB import PDBIO, Select
-from spherical._types import Atom, Residue, Residues, Structure, Seq
+from spherical._types import Atom, Residue, Residues, Structure, Seq, Chain
 import numpy as np
 
 
@@ -128,6 +128,17 @@ def rs_distance(r: Residue, rr: Residues, pp: list[int]):
     for p in pp:
         if (d := rr_distance(r, rr[p])) < distance:
             distance = d
+    return distance
+
+
+@beartype
+def cc_distance(c1: Chain, c2: Chain):
+    """Compute minimum `rr_distance` between two structures."""
+    distance = np.inf
+    for r1 in c1.get_residues():
+        for r2 in c2.get_residues():
+            if (d := rr_distance(r1, r2)) < distance:
+                distance = d
     return distance
 
 
