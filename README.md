@@ -1,5 +1,9 @@
 # SPHERICAL
 
+## Requirements
+
+1. To perform AutoDock, [Boost](https://www.boost.org/users/download/) is required.
+
 ## Installation
 
 1. clone this repository.
