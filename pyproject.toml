@@ -3,12 +3,15 @@ name = "spherical"
 version = "0.0.1"
 description = "Spherical ToolBox"
 readme = "README.md"
-requires-python =">=3.13"
+requires-python =">=3.12"
 authors = [
   {name = "Jaemin Oh", email = "jaeminoh.math@gmail.com"},
 ]
 keywords = ["bioinformatics"]
 urls = {repository = "https://github.com/jaeminoh/SPHERICAL" }
+dependencies = [
+    "esm>=3.2.0",
+]
 
 [build-system]
 requires = ["hatchling"]

@@ -1,0 +1,4 @@
+SEQUENCE: 
+SCORE: total_score dslf_fa13    fa_atr    fa_dun   fa_elec fa_intra_rep fa_intra_sol_xover4              fa_rep              fa_sol hbond_bb_sc hbond_lr_bb    hbond_sc hbond_sr_bb lk_ball_wtd       omega     p_aa_pp pro_close rama_prepro         ref yhh_planarity description 
+SCORE:   -1586.196   -18.459 -3313.445   671.312 -1026.817        5.639             108.578             410.468            2022.161    -166.657    -174.436     -93.613    -106.093     -86.392      73.470    -126.798     3.312      69.000     161.663         0.910 antigen_relaxed_0001
+SCORE:   -2779.329    -4.979 -4785.320   867.799 -1476.093        8.032             125.573             597.305            2670.754    -196.475    -397.234    -148.718    -107.598     -92.277     100.767    -237.317     7.018      11.234     274.960         3.241 antibody_relaxed_0001

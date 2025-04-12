@@ -1,0 +1,100 @@
+##############################################################################################################
+#
+# Rosetta crash log. Please submit the contents of this file to http://crash.rosettacommons.org/
+# or use the script Rosetta/main/source/scripts/python/public/report_crashes.py
+#
+
+[START_CRASH_REPORT]
+[ROSETTA_VERSION]: 2025.13.post.dev+1.main.695b0f21ae
+[COMMIT_DATE]: 2025-03-27T09:24:21
+[APPLICATION]: rosetta/source/bin/score_jd2.linuxgccrelease
+[MODE]: Release
+[EXTRAS]: default
+[OS]: GNU/Linux
+[COMPILER]: GCC version "11.4.0"
+[STDLIB]: libstdc++ version 20230528
+[START_OPTIONS]
+ -in:ignore_unrecognized_res -in:file:s=data/antigen_relaxed.pdb -out:prefix=data/antigen
+
+[END_OPTIONS]
+
+[START_BACKTRACE]: RAW_LIBC
+/home/jaemin_oh/SPHERICAL/rosetta/source/build/src/release/linux/5.15/64/x86/gcc/11/default/libutility.so(backtrace_string[abi:cxx11](int)+0x5a) [0x7f6bcf5d9a5a]
+/home/jaemin_oh/SPHERICAL/rosetta/source/build/src/release/linux/5.15/64/x86/gcc/11/default/libutility.so(utility::excn::Exception::Exception(char const*, int, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)+0xe0) [0x7f6bcf617fe0]
+/home/jaemin_oh/SPHERICAL/rosetta/source/build/src/release/linux/5.15/64/x86/gcc/11/default/libutility.so(utility::UtilityExitException::UtilityExitException(char const*, int, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)+0x113) [0x7f6bcf5debd3]
+/home/jaemin_oh/SPHERICAL/rosetta/source/build/src/release/linux/5.15/64/x86/gcc/11/default/libutility.so(utility::exit(char const*, int, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, int)+0x3b) [0x7f6bcf5de81b]
+/home/jaemin_oh/SPHERICAL/rosetta/source/build/src/release/linux/5.15/64/x86/gcc/11/default/libcore.6.so(core::import_pose::pose_from_file(core::pose::Pose&, core::chemical::ResidueTypeSet const&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, core::import_pose::ImportPoseOptions const&, bool, core::import_pose::FileType)+0x58a) [0x7f6bca8bf8ca]
+/home/jaemin_oh/SPHERICAL/rosetta/source/build/src/release/linux/5.15/64/x86/gcc/11/default/libcore.6.so(core::import_pose::pose_from_file(core::pose::Pose&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, core::import_pose::ImportPoseOptions const&, bool, core::import_pose::FileType)+0x11d) [0x7f6bca8c46fd]
+/home/jaemin_oh/SPHERICAL/rosetta/source/build/src/release/linux/5.15/64/x86/gcc/11/default/libcore.6.so(core::import_pose::pose_from_file(core::pose::Pose&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, bool, core::import_pose::FileType)+0x50) [0x7f6bca8c48f0]
+/home/jaemin_oh/SPHERICAL/rosetta/source/build/src/release/linux/5.15/64/x86/gcc/11/default/libprotocols.1.so(protocols::jd2::PDBJobInputter::pose_from_job(core::pose::Pose&, std::shared_ptr<protocols::jd2::Job>)+0x5ab) [0x7f6bd2963bbb]
+/home/jaemin_oh/SPHERICAL/rosetta/source/build/src/release/linux/5.15/64/x86/gcc/11/default/libprotocols.1.so(protocols::jd2::JobDistributor::run_one_job(std::shared_ptr<protocols::moves::Mover>&, long, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&, unsigned long&, unsigned long&, bool)+0x653) [0x7f6bd292caa3]
+/home/jaemin_oh/SPHERICAL/rosetta/source/build/src/release/linux/5.15/64/x86/gcc/11/default/libprotocols.1.so(protocols::jd2::JobDistributor::go_main(std::shared_ptr<protocols::moves::Mover>)+0x238) [0x7f6bd292f2b8]
+/home/jaemin_oh/SPHERICAL/rosetta/source/build/src/release/linux/5.15/64/x86/gcc/11/default/libprotocols.1.so(protocols::jd2::FileSystemJobDistributor::go(std::shared_ptr<protocols::moves::Mover>)+0x59) [0x7f6bd2917e89]
+rosetta/source/bin/score_jd2.linuxgccrelease(+0x8a7f) [0x55cc9505ba7f]
+/lib/x86_64-linux-gnu/libc.so.6(+0x29d90) [0x7f6bcefd6d90]
+/lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0x80) [0x7f6bcefd6e40]
+rosetta/source/bin/score_jd2.linuxgccrelease(+0x8ec5) [0x55cc9505bec5]
+
+[END_BACKTRACE]
+
+[FILE]: src/core/import_pose/import_pose.cc
+[LINE]: 391
+[START_MESSAGE]
+[ ERROR ] UtilityExitException
+ERROR: Cannot open file "data/antigen_relaxed.pdb"
+
+
+
+[END_MESSAGE]
+[END_CRASH_REPORT]
+
+##############################################################################################################
+#
+# Rosetta crash log. Please submit the contents of this file to http://crash.rosettacommons.org/
+# or use the script Rosetta/main/source/scripts/python/public/report_crashes.py
+#
+
+[START_CRASH_REPORT]
+[ROSETTA_VERSION]: 2025.13.post.dev+1.main.695b0f21ae
+[COMMIT_DATE]: 2025-03-27T09:24:21
+[APPLICATION]: rosetta/source/bin/score_jd2.linuxgccrelease
+[MODE]: Release
+[EXTRAS]: default
+[OS]: GNU/Linux
+[COMPILER]: GCC version "11.4.0"
+[STDLIB]: libstdc++ version 20230528
+[START_OPTIONS]
+ -in:ignore_unrecognized_res -in:file:s=data/antibody_relaxed.pdb -out:prefix=data/antibody
+
+[END_OPTIONS]
+
+[START_BACKTRACE]: RAW_LIBC
+/home/jaemin_oh/SPHERICAL/rosetta/source/build/src/release/linux/5.15/64/x86/gcc/11/default/libutility.so(backtrace_string[abi:cxx11](int)+0x5a) [0x7f31fc8afa5a]
+/home/jaemin_oh/SPHERICAL/rosetta/source/build/src/release/linux/5.15/64/x86/gcc/11/default/libutility.so(utility::excn::Exception::Exception(char const*, int, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)+0xe0) [0x7f31fc8edfe0]
+/home/jaemin_oh/SPHERICAL/rosetta/source/build/src/release/linux/5.15/64/x86/gcc/11/default/libutility.so(utility::UtilityExitException::UtilityExitException(char const*, int, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)+0x113) [0x7f31fc8b4bd3]
+/home/jaemin_oh/SPHERICAL/rosetta/source/build/src/release/linux/5.15/64/x86/gcc/11/default/libutility.so(utility::exit(char const*, int, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, int)+0x3b) [0x7f31fc8b481b]
+/home/jaemin_oh/SPHERICAL/rosetta/source/build/src/release/linux/5.15/64/x86/gcc/11/default/libcore.6.so(core::import_pose::pose_from_file(core::pose::Pose&, core::chemical::ResidueTypeSet const&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, core::import_pose::ImportPoseOptions const&, bool, core::import_pose::FileType)+0x58a) [0x7f31f7b958ca]
+/home/jaemin_oh/SPHERICAL/rosetta/source/build/src/release/linux/5.15/64/x86/gcc/11/default/libcore.6.so(core::import_pose::pose_from_file(core::pose::Pose&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, core::import_pose::ImportPoseOptions const&, bool, core::import_pose::FileType)+0x11d) [0x7f31f7b9a6fd]
+/home/jaemin_oh/SPHERICAL/rosetta/source/build/src/release/linux/5.15/64/x86/gcc/11/default/libcore.6.so(core::import_pose::pose_from_file(core::pose::Pose&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, bool, core::import_pose::FileType)+0x50) [0x7f31f7b9a8f0]
+/home/jaemin_oh/SPHERICAL/rosetta/source/build/src/release/linux/5.15/64/x86/gcc/11/default/libprotocols.1.so(protocols::jd2::PDBJobInputter::pose_from_job(core::pose::Pose&, std::shared_ptr<protocols::jd2::Job>)+0x5ab) [0x7f31ffc39bbb]
+/home/jaemin_oh/SPHERICAL/rosetta/source/build/src/release/linux/5.15/64/x86/gcc/11/default/libprotocols.1.so(protocols::jd2::JobDistributor::run_one_job(std::shared_ptr<protocols::moves::Mover>&, long, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&, unsigned long&, unsigned long&, bool)+0x653) [0x7f31ffc02aa3]
+/home/jaemin_oh/SPHERICAL/rosetta/source/build/src/release/linux/5.15/64/x86/gcc/11/default/libprotocols.1.so(protocols::jd2::JobDistributor::go_main(std::shared_ptr<protocols::moves::Mover>)+0x238) [0x7f31ffc052b8]
+/home/jaemin_oh/SPHERICAL/rosetta/source/build/src/release/linux/5.15/64/x86/gcc/11/default/libprotocols.1.so(protocols::jd2::FileSystemJobDistributor::go(std::shared_ptr<protocols::moves::Mover>)+0x59) [0x7f31ffbede89]
+rosetta/source/bin/score_jd2.linuxgccrelease(+0x8a7f) [0x55c712170a7f]
+/lib/x86_64-linux-gnu/libc.so.6(+0x29d90) [0x7f31fc2acd90]
+/lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0x80) [0x7f31fc2ace40]
+rosetta/source/bin/score_jd2.linuxgccrelease(+0x8ec5) [0x55c712170ec5]
+
+[END_BACKTRACE]
+
+[FILE]: src/core/import_pose/import_pose.cc
+[LINE]: 391
+[START_MESSAGE]
+[ ERROR ] UtilityExitException
+ERROR: Cannot open file "data/antibody_relaxed.pdb"
+
+
+
+[END_MESSAGE]
+[END_CRASH_REPORT]
+

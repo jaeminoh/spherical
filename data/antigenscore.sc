@@ -1,0 +1,3 @@
+SEQUENCE: 
+SCORE: total_score       score dslf_fa13    fa_atr    fa_dun   fa_elec fa_intra_rep fa_intra_sol_xover4              fa_rep              fa_sol hbond_bb_sc hbond_lr_bb    hbond_sc hbond_sr_bb linear_chainbreak lk_ball_wtd       omega overlap_chainbreak            p_aa_pp pro_close rama_prepro         ref        time yhh_planarity description 
+SCORE:   -1586.237   -1586.237   -18.450 -3313.447   671.501 -1026.861        5.638             108.578             410.460            2022.145    -166.660    -174.441     -93.610    -106.096             0.000     -86.386      73.471              0.000           -126.814     3.164      68.999     161.663       1.000         0.910 data/antigenantigen_relaxed_0001_0001

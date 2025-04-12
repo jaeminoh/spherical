@@ -1,0 +1,13 @@
+# https://github.com/RosettaCommons/demos/blob/48c9239db73b9a8c828954d9215c983b9f144c92/tutorials/Protein-Protein-Docking/flag_local_docking
+
+-in:file:s data/antigen.pdb
+-in:file:native data/6iek.pdb
+-unboundrot data/antibody.pdb
+
+-nstruct=1
+
+-partners AD_BC
+-dock_pert 3 8
+
+-out:path:all data
+-out:suffix _local_dock
