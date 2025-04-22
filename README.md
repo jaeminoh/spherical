@@ -7,7 +7,7 @@
 ## Installation
 
 1. clone this repository.
-2. install via `pip install -e .`
+2. `uv sync`, see [uv docs](https://docs.astral.sh/uv/).
 
 ## Some commands for ChimeraX
 

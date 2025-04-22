@@ -1,3 +1,0 @@
-SEQUENCE: 
-SCORE: total_score       score dslf_fa13    fa_atr    fa_dun   fa_elec fa_intra_rep fa_intra_sol_xover4              fa_rep              fa_sol hbond_bb_sc hbond_lr_bb    hbond_sc hbond_sr_bb linear_chainbreak lk_ball_wtd       omega overlap_chainbreak            p_aa_pp pro_close rama_prepro         ref        time yhh_planarity description 
-SCORE:   -4467.101   -4467.101   -23.969 -8199.081  1531.932 -2583.914       13.885             235.811            1012.684            4792.709    -383.870    -572.982    -269.768    -211.245             0.000    -168.430     192.380              0.000           -360.849    10.797      76.487     436.623       1.000         3.698 6iek_relaxed_0002_0002_0001
