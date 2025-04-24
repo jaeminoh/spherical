@@ -1,0 +1,3 @@
+- [ ] prepare training dataset
+    - Input: ESM encodings for (Ag, Hchain, Lchain)
+    - Output: binding affinity measures ($\Delta G$ or $K_d$)

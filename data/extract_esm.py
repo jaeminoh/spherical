@@ -6,8 +6,7 @@ from esm.sdk.api import (
     LogitsConfig,
     LogitsOutput,
 )
-import matplotlib.pyplot as plt
-
+import numpy as np
 from data_summary import load_SAbDab, extract_sequences
 import fire
 
@@ -26,22 +25,38 @@ def main(HIDDEN: int = 35):
         output = model.logits(protein_tensor, EMBEDDING_CONFIG)
         return output
 
-    ag_list, h_list, l_list = extract_sequences(load_SAbDab())
+    (ag_list, h_list, l_list), dg_list = extract_sequences(load_SAbDab())
+    ag_features = []
+    h_features = []
+    l_features = []
+    for i in range(len(dg_list)):
+        ag_features.append(
+            embed_sequence(model, str(ag_list[i]))
+            .hidden_states.mean(-2)
+            .squeeze()
+            .float()
+            .cpu()
+        )
+        h_features.append(
+            embed_sequence(model, str(h_list[i]))
+            .hidden_states.mean(-2)
+            .squeeze()
+            .float()
+            .cpu()
+        )
+        l_features.append(
+            embed_sequence(model, str(l_list[i]))
+            .hidden_states.mean(-2)
+            .squeeze()
+            .float()
+            .cpu()
+        )
 
-    ag1 = embed_sequence(model, str(ag_list[0]))
-    h1 = embed_sequence(model, str(h_list[0]))
-    l1 = embed_sequence(model, str(l_list[0]))
-
-    # output.hidden_states.shape == [# hidden states, # sequences, len(sequence), # hidden features]
-    print(
-        ag1.hidden_states.mean(-2).squeeze(),
-        h1.hidden_states.mean(-2).squeeze(),
-        l1.hidden_states.mean(-2).squeeze(),
-    )
-
-    plt.plot(ag1.hidden_states.mean(-2).squeeze().float().cpu())
-    plt.title(f"{HIDDEN}")
-    plt.savefig(f"{HIDDEN}.pdf")
+    ag_features = np.stack(ag_features)
+    h_features = np.stack(h_features)
+    l_features = np.stack(l_features)
+    dG = np.stack(dg_list)
+    np.savez("data.npz", ag=ag_features, hchain=h_features, lchain=l_features, dG=dG)
 
 
 if __name__ == "__main__":

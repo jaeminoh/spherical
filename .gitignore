@@ -1,3 +1,4 @@
+*.npz
 *.pdf
 rosetta/
 data_repo/

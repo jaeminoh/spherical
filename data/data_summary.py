@@ -26,6 +26,7 @@ def extract_sequences(df):
     ag_list = []
     h_list = []
     l_list = []
+    dg_list = []
 
     for _, row in df.iterrows():
         pdb_id = f"{row.pdb}"
@@ -40,8 +41,9 @@ def extract_sequences(df):
             ag_list.append(chain[pdb_id + ":" + ag_chain])
             h_list.append(chain[pdb_id + ":" + h_chain])
             l_list.append(chain[pdb_id + ":" + l_chain])
+            dg_list.append(row.delta_g)
 
-    return ag_list, h_list, l_list
+    return (ag_list, h_list, l_list), dg_list
 
 
 if __name__ == "__main__":
