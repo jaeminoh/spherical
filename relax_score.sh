@@ -1,6 +1,10 @@
 #!/bin/bash
+# $1 pdb file name
+# $2 Ag chain
+# $3 Ab Hchain
+# $4 Ab Lchain
 
-export RP="rosetta/source"
+export RP="../rosetta/source"
 export F="data/antibody"
 
 # relaxation
