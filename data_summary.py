@@ -3,7 +3,7 @@ import pandas as pd
 
 
 def load_SAbDab():
-    df = pd.read_csv("SAbDab.tsv", sep="\t")
+    df = pd.read_csv("SAbDab/SAbDab.tsv", sep="\t")
     df = df[
         ~pd.isna(df.affinity)
         & ~pd.isna(df.delta_g)

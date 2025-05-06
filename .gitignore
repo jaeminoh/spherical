@@ -1,3 +1,4 @@
+*.sc
 *.npz
 *.pdf
 rosetta/
