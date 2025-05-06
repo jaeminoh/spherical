@@ -1,3 +1,8 @@
+## Install
+
+- install `uv`
+- `source setup.sh`
+
 ## TODO
 
 - [x] prepare training dataset (04/24/2025)
