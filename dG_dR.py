@@ -110,6 +110,7 @@ def compute_R2(dG, dR):
 
 if __name__ == "__main__":
     from data_summary import load_SAbDab
+    import matplotlib.pyplot as plt
 
     d = load_SAbDab()
     # 2uzi contains unknown amino acids GTP
@@ -120,12 +121,27 @@ if __name__ == "__main__":
     pdb_id = []
 
     for _, _d in d.iterrows():
-        dG.append(_d.delta_g)
-        dR.append(
-            read_rosetta_scorefile(f"SAbDab/{_d.pdb}.sc")["dG_separated"]
-        )  # /dSASAx100"])
-        # dR.append(read_rosetta_scorefile(f"SAbDab/{_d.pdb}_total.sc").total_score[0])
+        total = read_rosetta_scorefile(f"SAbDab/{_d.pdb}_total.sc").total_score[0]
+        # if total < 0:
+        if total:
+            # _dR = read_rosetta_scorefile(f"SAbDab/{_d.pdb}.sc")["dG_separated/dSASAx100"].to_numpy()[0]
+            _dR = read_rosetta_scorefile(f"SAbDab/{_d.pdb}.sc")[
+                "dG_separated"
+            ].to_numpy()[0]
+            if np.abs(_dR):
+                # if np.abs(_dR) < 1000:
+                dG.append(_d.delta_g)
+                dR.append(_dR)
+            # dR.append(read_rosetta_scorefile(f"SAbDab/{_d.pdb}_total.sc").total_score[0])
 
-    print(len(dG), len(dR))
+    dG = np.array(dG)
+    dR = np.array(dR)
+    print("dR: ", dR)
+    print("dR length: ", dR.shape)
+    plt.scatter(dR, dG)
+    plt.xlabel(r"$\Delta R$")
+    plt.ylabel(r"$\Delta G$")
+    plt.tight_layout()
+    plt.savefig("dG_dR.pdf", dpi=300)
     # print("correlation coefficient: ", compute_correlation(dG, dR))
     print("R^2: ", compute_R2(dG, dR))
