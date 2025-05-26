@@ -281,8 +281,7 @@ def main(
     min_mutations: int = 1,
     max_mutations: int = 3,
     simulation_seed: int = 42,
-    output_csv_path: str = "sampled_mutant_data.csv",  # Configurable output path
-    output_parquet_path: str = "sampled_mutant_data.parquet",  # Configurable output path
+    output_csv_path: str = "data/sampled_mutant_data.csv",  # Configurable output path
 ):
     """
     Main function to run the protein mutation simulation and MultiDMS analysis.
@@ -319,17 +318,6 @@ def main(
     print(f"\n--- Saving sampled data to {output_csv_path} ---")
     sampled_df.to_csv(output_csv_path, index=False)
     print("Sampled data saved successfully as CSV.")
-
-    # Optional: Save to Parquet for larger datasets/better performance
-    try:
-        sampled_df.to_parquet(output_parquet_path, index=False)
-        print(f"Sampled data saved successfully as Parquet to {output_parquet_path}.")
-    except ImportError:
-        print(
-            "PyArrow not installed. Cannot save to Parquet. Run 'pip install pyarrow' to enable."
-        )
-    except Exception as e:
-        print(f"Error saving to Parquet: {e}")
 
 
 if __name__ == "__main__":
