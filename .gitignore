@@ -1,3 +1,5 @@
+*.parquet
+*.csv
 *.sc
 *.npz
 *.pdf
