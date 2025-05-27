@@ -1,6 +1,8 @@
 import pickle
 import multidms  # Specific import for Data class
 import pandas as pd
+import fire
+from scipy.stats import pearsonr
 
 # --- Global Constants (can be configured in main or passed as args) ---
 WT_SEQUENCE = "MYVLLTILISVLVCEAVIRVSLSSTREETCFGDSTNPEMIEGAWDSLREEEMPEELSCSISGIREVKTSSQELYRALKAIIAADGLNNITCHGKDPEDKISLIKGPPHKKRVGIVRCERRRDAKQIGRETMAGIAMTVLPALAVFALAPVVFAEDPHLRNRPGKGHNYIDGMTQEDATCKPVTYAGACSSFDVLLEKGKFPLFQSYAHHRTLLEAVHDTIIAKADPPSCDLQSAHGNPCMKEKLVMKTHCPNDYQSAHYLNNDGKMASVKCPPKYELTEDCNFCRQMTGASLKKGSYPLQDLFCQSSEDDGSKLKTKMKGVCEVGVQALKKCDGQLSTAHEVVPFAVFKNSKKVYLDKLDLKTEENLLPDSFVCFEHKGQYKGTMDSGQTKRELKSFDISQCPKIGGHGSKKCTGDAAFCSAYECTAQYANAYCSHANGSGIVQIQVSGVWKKPLCVGYERVVVKRELSAKPIQRVEPCTTCITKCEPHGLVVRSTGFKISSAVACASGVCVTGSQSPSTEITLKYPGISQSSGGDIGVHMAHDDQSVSSKIVAHCPPQDPCLVHGCIVCAHGLINYQCHTALSAFVVVFVFSSIAIICLAVLYRVLKCLKIAPRKVLNPLMWITAFIRWIYKKMVARVADNINQVNREIGWMEGGQLVLGNPAPIPRHAPIPRYSTYLMLLLIVSYASACSELIQASSRITTCSTEGVNTKCRLSGTALIRAGSVGAEACLMLKGVKEDQTKFLWIKTVSSELSCREGQSYWTGSFSPKCLSSRRCHLVGECHVNRCLSWRDNETSAEFSFVGESTTMRENKCFEQCGGWGCGCFNVNPSCLFVHTYLQSVRKEALRVFNCIDWVHKLTLEITDFDGSVSTIDLGASSSRFTNWGSVSLSLDAEGISGSNSFSFIESPGKGYAIVDEPFSEIPRQGFLGEIRCNSESSVLSAHESCLRAPNLISYKPMIDQLECTTNLIDPFVVFERGSLPQTRNDKTFAASKGNRGVQAFSKGSVQADLTLMFDNFEVDFVGAAVSCDAAFLNLTGCYSCNAGARVCLSITSTGTGSLSAHNKDGSLHIVLPSENGTKDQCQILHFTVPEVEEEFMYSCDGDERPLLVKGTLIAIDPFDDRREAGGESTVVNPKSGSWNFFDWFSGLMSWFGGPLKTILLICLYVALSIGLFFLLIYLGRTGLSKMWLAATKKAS"
@@ -38,7 +40,7 @@ def fit_multidms_model(
     # The library is expected to infer it from the 'reference' condition and mutations.
     dms_dataset = multidms.Data(
         df,  # Pass the DataFrame directly
-        reference="Simulated_Mutant",  # Set the wild-type condition as per the DataFrame
+        reference="rMP12",  # Set the wild-type condition as per the DataFrame
         alphabet=multidms.AAS,  # Specify amino acid alphabet
         verbose=True,
         nb_workers=None,  # Set number of workers for data processing
@@ -80,4 +82,47 @@ def fit_multidms_model(
     fit_params["dataset"] = [dms_dataset]
     _, _, models = multidms.fit_models(fit_params, n_threads=-1)
     pickle.dump(models, open("data/full_models.pkl", "wb"))
-    return models
+
+
+def main(
+    fit_maxiter: int = 5000,
+    csv_path: str = "data/sampled_mutant_data.csv",
+    model_path: str = "data/full_models.pkl",
+    mode: str = "test",
+) -> None:
+    """
+    Main function for the MultiDMS fitting and analysis part of the workflow.
+
+    Args:
+        fit_maxiter (int): Maximum iterations for the MultiDMS model fitting process.
+        csv_path (str): Path to the CSV file containing the sampled data.
+    """
+    sampled_df = pd.read_csv(csv_path)
+    if mode == "train":
+        print(f"\n--- Load data from {csv_path} ---")
+        sampled_df["condition"] = sampled_df["condition"].astype(str)
+        sampled_df["aa_substitutions"] = sampled_df["aa_substitutions"].astype(str)
+        sampled_df["func_score"] = sampled_df["func_score"].astype(float)
+        print("Data loaded successfully from CSV.")
+
+        fit_multidms_model(sampled_df, fit_maxiter=fit_maxiter)
+
+    print("\n--- Testing the fitted model ---")
+    test_df = pd.read_csv("data/test.csv")
+    print(test_df.head())
+    print("predictions:")
+    models: list[multidms.Model] = pickle.load(open(model_path, "rb"))
+
+    multidms.Model.add_phenotypes_to_df
+
+    for model in models["model"]:
+        df = model.add_phenotypes_to_df(test_df)
+        print(df)
+
+    y_pred = df["predicted_func_score"]
+    y_true = test_df["func_score"]
+    print(f"Pearson correlation: {pearsonr(y_pred, y_true)}")
+
+
+if __name__ == "__main__":
+    fire.Fire(main)

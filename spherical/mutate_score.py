@@ -233,14 +233,6 @@ def run_monte_carlo_sampling_and_scoring(
     # Add the wild-type sequence data point for multidms baseline
     # Renamed columns to match multidms example: 'aa_substitutions' and 'func_score'
     # 'condition' column added
-    all_sampled_data.append(
-        {
-            "condition": "WT_condition",  # Example condition name
-            "aa_substitutions": "",  # Empty string for WT
-            "func_score": 0.0,  # WT has a score of 0.0 relative to itself
-        }
-    )
-
     for i in range(num_samples):
         num_muts_for_this_sample = random.randint(
             min_mutations_per_sample, max_mutations_per_sample
@@ -259,7 +251,7 @@ def run_monte_carlo_sampling_and_scoring(
 
         all_sampled_data.append(
             {
-                "condition": "Simulated_Mutant",  # Example condition for mutants
+                "condition": "rMP12",  # Example condition for mutants
                 "aa_substitutions": format_mutations_for_multidms(
                     mutations_list_detailed
                 ),
