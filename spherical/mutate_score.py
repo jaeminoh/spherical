@@ -41,6 +41,73 @@ MASK_TOKEN_CHAR = "[MASK]"
 # --- 1. Random Mutant Generation Function ---
 
 
+def find_mutation_information(
+    original_sequence: str,
+    mutant_sequence: str,
+) -> list:
+    """
+    Finds the positions and amino acids of mutations between the original and mutant sequences.
+
+    Args:
+        original_sequence (str): The wild-type protein sequence.
+        mutant_sequence (str): The mutated protein sequence.
+
+    Returns:
+        list: A list of dictionaries, where each dictionary describes a mutation:
+              {"position": int, "original_aa": str, "mutated_aa": str}
+    """
+    mutations_introduced = []
+    for i, (wt_aa, mt_aa) in enumerate(zip(original_sequence, mutant_sequence)):
+        if wt_aa != mt_aa:
+            mutations_introduced.append(
+                {"position": i, "original_aa": wt_aa, "mutated_aa": mt_aa}
+            )
+    return mutations_introduced
+
+
+def mutate_sequence(
+    original_sequence: str,
+    positions: list[int],
+    new_amino_acids: list[str],
+    return_detailed: bool = True,
+) -> tuple[str, list] | str:
+    """
+    Mutates specific positions in a protein sequence with new amino acids.
+
+    Args:
+        original_sequence (str): The wild-type protein sequence.
+        positions (list[int]): List of 0-indexed positions to mutate.
+        new_amino_acids (list[str]): List of new amino acids to insert at the specified positions.
+
+    Returns:
+        str: The mutated protein sequence.
+    """
+    assert len(positions) == len(new_amino_acids), (
+        "positions and new_amino_acids must have the same length."
+    )
+    mutant_list = list(original_sequence)
+    mutations_introduced_detailed = []
+
+    for pos, new_aa in zip(positions, new_amino_acids):
+        if pos < 0 or pos >= len(original_sequence):
+            raise ValueError(
+                f"Position {pos} is out of bounds for sequence length {len(original_sequence)}."
+            )
+        mutant_list[pos] = new_aa
+        mutations_introduced_detailed.append(
+            {
+                "position": pos,
+                "original_aa": original_sequence[pos],
+                "mutated_aa": new_aa,
+            }
+        )
+    mutant_sequence = "".join(mutant_list)
+    if return_detailed:
+        return mutant_sequence, mutations_introduced_detailed
+    else:
+        return mutant_sequence
+
+
 def create_random_mutant(
     original_sequence: str,
     num_mutations: int = 1,
@@ -67,9 +134,7 @@ def create_random_mutant(
     if seed is not None:
         random.seed(seed)
 
-    mutant_list = list(original_sequence)
     sequence_length = len(original_sequence)
-    mutations_introduced_detailed = []
 
     if mutation_rate is not None:
         num_mutations = max(1, int(sequence_length * mutation_rate))
@@ -83,22 +148,14 @@ def create_random_mutant(
 
     mutation_positions = random.sample(range(sequence_length), num_mutations)
     mutation_positions.sort()
+    new_amino_acids = random.choices(AMINO_ACIDS, k=num_mutations)  # with replacement
 
-    for pos in mutation_positions:
-        original_aa = mutant_list[pos]
-
-        possible_mutations = [aa for aa in AMINO_ACIDS if aa != original_aa]
-        if not possible_mutations:
-            continue
-
-        mutated_aa = random.choice(possible_mutations)
-
-        mutant_list[pos] = mutated_aa
-        mutations_introduced_detailed.append(
-            {"position": pos, "original_aa": original_aa, "mutated_aa": mutated_aa}
-        )
-
-    mutant_sequence = "".join(mutant_list)
+    mutant_sequence, mutations_introduced_detailed = mutate_sequence(
+        original_sequence,
+        mutation_positions,
+        new_amino_acids,
+        return_detailed=True,
+    )
     return mutant_sequence, mutations_introduced_detailed
 
 

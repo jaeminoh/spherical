@@ -89,6 +89,7 @@ def main(
     csv_path: str = "data/sampled_mutant_data.csv",
     model_path: str = "data/full_models.pkl",
     mode: str = "test",
+    max_mutations: int = 15,
 ) -> None:
     """
     Main function for the MultiDMS fitting and analysis part of the workflow.
@@ -108,7 +109,7 @@ def main(
         fit_multidms_model(sampled_df, fit_maxiter=fit_maxiter)
 
     print("\n--- Testing the fitted model ---")
-    test_df = pd.read_csv("data/test.csv")
+    test_df = pd.read_csv(f"data/test{max_mutations}.csv")
     print(test_df.head())
     print("predictions:")
     models: list[multidms.Model] = pickle.load(open(model_path, "rb"))
@@ -122,6 +123,9 @@ def main(
     y_pred = df["predicted_func_score"]
     y_true = test_df["func_score"]
     print(f"Pearson correlation: {pearsonr(y_pred, y_true)}")
+    df.iloc[:, :-1].head().to_csv(
+        f"data/test{max_mutations}_predictions.csv", index=False
+    )
 
 
 if __name__ == "__main__":
