@@ -40,7 +40,7 @@ def find_optimal_mutant(model: multidms.Model, num_mutations: int = 5) -> str:
     while len(positions) < num_mutations:
         row = mutations_df.iloc[row_index]
         if row["sites"] not in positions:
-            positions.append(row["sites"])
+            positions.append(row["sites"] - 1)  # 1-indexed to 0-indexed
             new_amino_acids.append(row["muts"])
         row_index += 1
 
@@ -48,6 +48,7 @@ def find_optimal_mutant(model: multidms.Model, num_mutations: int = 5) -> str:
     optimal_sequence, mutations_list_detailed = mutate_sequence(
         WT_SEQUENCE, positions, new_amino_acids
     )
+    print(mutations_list_detailed)
     model = load_esm_model()
     # calculate the log likelihood ratio for the optimal mutant
     final_score = calculate_esm_llr_for_variant(

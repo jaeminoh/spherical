@@ -174,7 +174,9 @@ def format_mutations_for_multidms(mutations_list_detailed: list) -> str:
         return ""  # multidms expects an empty string for WT, not "WT"
     formatted_muts = []
     for m in mutations_list_detailed:
-        formatted_muts.append(f"{m['original_aa']}{m['position'] + 1}{m['mutated_aa']}")
+        formatted_muts.append(
+            f"{m['original_aa']}{m['position'] + 1}{m['mutated_aa']}"
+        )  # 1-indexed position
     return " ".join(
         sorted(formatted_muts)
     )  # Use space as separator, not comma for 'M3A K5G' format
