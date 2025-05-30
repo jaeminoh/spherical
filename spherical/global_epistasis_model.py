@@ -82,6 +82,7 @@ def fit_multidms_model(
     fit_params["dataset"] = [dms_dataset]
     _, _, models = multidms.fit_models(fit_params, n_threads=-1)
     pickle.dump(models, open("data/full_models.pkl", "wb"))
+    print("MultiDMS model fitting completed and saved to 'data/full_models.pkl'.")
 
 
 def main(
@@ -113,8 +114,6 @@ def main(
     print(test_df.head())
     print("predictions:")
     models: list[multidms.Model] = pickle.load(open(model_path, "rb"))
-
-    multidms.Model.add_phenotypes_to_df
 
     for model in models["model"]:
         df = model.add_phenotypes_to_df(test_df)

@@ -149,6 +149,14 @@ def create_random_mutant(
     mutation_positions = random.sample(range(sequence_length), num_mutations)
     mutation_positions.sort()
     new_amino_acids = random.choices(AMINO_ACIDS, k=num_mutations)  # with replacement
+    # Ensure new amino acids are different from original at those positions
+    for pos in mutation_positions:
+        original_aa = original_sequence[pos]
+        while True:
+            new_aa = random.choice(AMINO_ACIDS)
+            if new_aa != original_aa:
+                break
+        new_amino_acids[mutation_positions.index(pos)] = new_aa
 
     mutant_sequence, mutations_introduced_detailed = mutate_sequence(
         original_sequence,
