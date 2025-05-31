@@ -1,25 +1,16 @@
-# SPHERICAL
+## Install
 
-## Requirements
+- install `uv`
+- `source setup.sh`
 
-1. To perform AutoDock, [Boost](https://www.boost.org/users/download/) is required.
+## TODO
 
-## Installation
+- [x] prepare training dataset (04/24/2025)
+    - Input: ESM encodings for (Ag, Hchain, Lchain)
+    - Output: binding affinity measures ($\Delta G$ or $K_d$)
 
-1. clone this repository.
-2. `uv sync`, see [uv docs](https://docs.astral.sh/uv/).
+- [ ] do some feature engineering
+    - Currently, to deal with different sequence lengths, `output.hidden_states.mean(-2)` approach. This can be improved by applying convolutional several times followed by global pooling, as suggested by Gemini.
 
-## Some commands for ChimeraX
 
-- `select :12, 13-15` command selects (12, 13, 14, 15)th residues.
-- `save xxx.pdb selectedOnly true` saves only selected ones to `.pdb` format.
-
-## Some notes for RFDiffusion
-[colab](https://colab.research.google.com/github/sokrypton/ColabDesign/blob/main/rf/examples/diffusion.ipynb)
-
-- contigs `5-10/A15-30/25-30` fixes (15, ..., 30)th residues of the A chain, samples 5~10 residues, and samples 25~30 residues randomly.
-- sampled protein structures are validated with protein MPNN (3D structure to sequence) + AF prediction (sequence to 3D structure).
-
-## ZDock
-
-- from ZDock pdb to ChimeraX compatible PDB: `awk '{printf("%54.54s\n", $0)}' < complex.1.pdb > c.1.pdb`
+## Rosetta relaxation and scoring
