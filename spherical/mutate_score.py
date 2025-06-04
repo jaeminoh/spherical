@@ -184,10 +184,11 @@ def load_esm_model(model_name: str = "esmc_600m") -> ESMC:
     """Loads the specified ESMC model."""
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"Loading ESMC model '{model_name}' on {device}...")
-    client = ESMC.from_pretrained(model_name).to(device)
-    client.eval()  # Set the model to evaluation mode
+    model = ESMC.from_pretrained(model_name).to(device)
+    model.eval()  # Set the model to evaluation mode
+    alphabet = model.tokenizer.get_vocab()
     print("ESMC model loaded.")
-    return client
+    return model, alphabet
 
 
 def calculate_esm_llr_for_variant(

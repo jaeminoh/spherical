@@ -33,4 +33,4 @@ def embed_sequence(
 output = embed_sequence(model, sequence=sequence)
 print(
     output.hidden_states.shape
-)  # [# hidden states = 36, # sequences = 1, len(sequence) = 12271, # hidden features = 1152]
+)  # [# hidden states = 36, # sequences = 1, len(sequence) = 391, # hidden features = 1152]
