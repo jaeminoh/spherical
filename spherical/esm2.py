@@ -40,7 +40,7 @@ def mask_sequence(
 def mask_sequence_str(sequence: str, positions: list[int]) -> str:
     sequence_masked = list(sequence)
     for pos in positions:
-        sequence_masked[pos] = "m"  # Masking with 'm' for the mutated positions
+        sequence_masked[pos] = "#"  # Masking with '#' for the mutated positions
     return "".join(sequence_masked)
 
 
@@ -53,7 +53,7 @@ def compute_esm_score(
         "First and last tokens must be the same for both sequences"
     )
     sequence_masked_id = mask_sequence(
-        wt_ids, mutated_positions, mask_token=model.alphabet["m"]
+        wt_ids, mutated_positions, mask_token=esmqx.tokenise(["#"])[0][1:-1]
     )
     out = model(sequence_masked_id)  # model input
     logits = out.logits
@@ -74,8 +74,7 @@ def compute_esm_score_str(model: esmqx.ESM2, wt: str, mt: str):
     assert len(wt) == logits.shape[0], "different shape!"
     log_prob = jax.nn.log_softmax(logits, axis=-1)
     ids = jnp.array(positions)  # Convert positions to jnp array
-    wt_ids = jnp.array(list(model.alphabet[_aa] for _aa in wt_aa))
-    mt_ids = jnp.array(list(model.alphabet[_aa] for _aa in mt_aa))
+    wt_ids, mt_ids = esmqx.tokenise(["".join(wt_aa), "".join(mt_aa)])[:, 1:-1]
     wt_score = log_prob[ids, wt_ids].sum()
     mt_score = log_prob[ids, mt_ids].sum()
     return mt_score - wt_score
