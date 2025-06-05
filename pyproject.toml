@@ -10,11 +10,13 @@ authors = [
 keywords = ["bioinformatics"]
 urls = {repository = "https://github.com/jaeminoh/SPHERICAL" }
 dependencies = [
+    "beartype>=0.21.0",
     "esm2quinox>=0.1.0",
     "fair-esm>=2.0.0",
     "fire>=0.7.0",
     "ipykernel>=6.29.5",
     "jax[cuda12]>=0.6.1",
+    "jaxtyping>=0.3.2",
     "matplotlib>=3.10.1",
     "multidms>=0.4.2",
     "numpy>=2.2.4",
