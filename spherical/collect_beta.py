@@ -1,13 +1,8 @@
 # load fitted multidms model and collect model parameters
 import pickle
 import multidms
-
-from mutate_score import (
-    load_esm_model,
-    calculate_esm_llr_for_variant,
-    mutate_sequence,
-    WT_SEQUENCE,
-)
+from utils import mutate_str, compute_esm_score_str, load_model
+from constants import SEQUENCE_WT
 
 model_path = "data/full_models.pkl"
 
@@ -45,15 +40,12 @@ def find_optimal_mutant(model: multidms.Model, num_mutations: int = 5) -> str:
         row_index += 1
 
     # mutate sequence
-    optimal_sequence, mutations_list_detailed = mutate_sequence(
-        WT_SEQUENCE, positions, new_amino_acids
-    )
-    print(mutations_list_detailed)
-    model = load_esm_model()
+
+    optimal_sequence = mutate_str(SEQUENCE_WT, positions, new_amino_acids)
+    model = load_model(model_params=650)
+
     # calculate the log likelihood ratio for the optimal mutant
-    final_score = calculate_esm_llr_for_variant(
-        model, optimal_sequence, mutations_list_detailed
-    )
+    final_score = compute_esm_score_str(model, SEQUENCE_WT, optimal_sequence)
     print(f"Final score for the optimal mutant: {final_score}")
 
 

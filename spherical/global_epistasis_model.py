@@ -2,15 +2,9 @@ import pickle
 import multidms  # Specific import for Data class
 import pandas as pd
 import fire
-from scipy.stats import pearsonr
+import jax
 
-# --- Global Constants (can be configured in main or passed as args) ---
-WT_SEQUENCE = "MYVLLTILISVLVCEAVIRVSLSSTREETCFGDSTNPEMIEGAWDSLREEEMPEELSCSISGIREVKTSSQELYRALKAIIAADGLNNITCHGKDPEDKISLIKGPPHKKRVGIVRCERRRDAKQIGRETMAGIAMTVLPALAVFALAPVVFAEDPHLRNRPGKGHNYIDGMTQEDATCKPVTYAGACSSFDVLLEKGKFPLFQSYAHHRTLLEAVHDTIIAKADPPSCDLQSAHGNPCMKEKLVMKTHCPNDYQSAHYLNNDGKMASVKCPPKYELTEDCNFCRQMTGASLKKGSYPLQDLFCQSSEDDGSKLKTKMKGVCEVGVQALKKCDGQLSTAHEVVPFAVFKNSKKVYLDKLDLKTEENLLPDSFVCFEHKGQYKGTMDSGQTKRELKSFDISQCPKIGGHGSKKCTGDAAFCSAYECTAQYANAYCSHANGSGIVQIQVSGVWKKPLCVGYERVVVKRELSAKPIQRVEPCTTCITKCEPHGLVVRSTGFKISSAVACASGVCVTGSQSPSTEITLKYPGISQSSGGDIGVHMAHDDQSVSSKIVAHCPPQDPCLVHGCIVCAHGLINYQCHTALSAFVVVFVFSSIAIICLAVLYRVLKCLKIAPRKVLNPLMWITAFIRWIYKKMVARVADNINQVNREIGWMEGGQLVLGNPAPIPRHAPIPRYSTYLMLLLIVSYASACSELIQASSRITTCSTEGVNTKCRLSGTALIRAGSVGAEACLMLKGVKEDQTKFLWIKTVSSELSCREGQSYWTGSFSPKCLSSRRCHLVGECHVNRCLSWRDNETSAEFSFVGESTTMRENKCFEQCGGWGCGCFNVNPSCLFVHTYLQSVRKEALRVFNCIDWVHKLTLEITDFDGSVSTIDLGASSSRFTNWGSVSLSLDAEGISGSNSFSFIESPGKGYAIVDEPFSEIPRQGFLGEIRCNSESSVLSAHESCLRAPNLISYKPMIDQLECTTNLIDPFVVFERGSLPQTRNDKTFAASKGNRGVQAFSKGSVQADLTLMFDNFEVDFVGAAVSCDAAFLNLTGCYSCNAGARVCLSITSTGTGSLSAHNKDGSLHIVLPSENGTKDQCQILHFTVPEVEEEFMYSCDGDERPLLVKGTLIAIDPFDDRREAGGESTVVNPKSGSWNFFDWFSGLMSWFGGPLKTILLICLYVALSIGLFFLLIYLGRTGLSKMWLAATKKAS"
-SEQUENCE_LENGTH = len(WT_SEQUENCE)
-AMINO_ACIDS = "ACDEFGHIKLMNPQRSTVWY"  # 20 standard amino acids
-
-
-# --- 4. MultiDMS Model Fitting Function ---
+jax.config.update("jax_platform_name", "cpu")
 
 
 def fit_multidms_model(
@@ -86,11 +80,7 @@ def fit_multidms_model(
 
 
 def main(
-    fit_maxiter: int = 5000,
-    csv_path: str = "data/sampled_mutant_data.csv",
-    model_path: str = "data/full_models.pkl",
-    mode: str = "test",
-    max_mutations: int = 15,
+    fit_maxiter: int = 5000, csv_path: str = "data/sampled_mutant_data.csv"
 ) -> None:
     """
     Main function for the MultiDMS fitting and analysis part of the workflow.
@@ -100,31 +90,14 @@ def main(
         csv_path (str): Path to the CSV file containing the sampled data.
     """
     sampled_df = pd.read_csv(csv_path)
-    if mode == "train":
-        print(f"\n--- Load data from {csv_path} ---")
-        sampled_df["condition"] = sampled_df["condition"].astype(str)
-        sampled_df["aa_substitutions"] = sampled_df["aa_substitutions"].astype(str)
-        sampled_df["func_score"] = sampled_df["func_score"].astype(float)
-        print("Data loaded successfully from CSV.")
 
-        fit_multidms_model(sampled_df, fit_maxiter=fit_maxiter)
+    print(f"\n--- Load data from {csv_path} ---")
+    sampled_df["condition"] = sampled_df["condition"].astype(str)
+    sampled_df["aa_substitutions"] = sampled_df["aa_substitutions"].astype(str)
+    sampled_df["func_score"] = sampled_df["func_score"].astype(float)
+    print("Data loaded successfully from CSV.")
 
-    print("\n--- Testing the fitted model ---")
-    test_df = pd.read_csv(f"data/test{max_mutations}.csv")
-    print(test_df.head())
-    print("predictions:")
-    models: list[multidms.Model] = pickle.load(open(model_path, "rb"))
-
-    for model in models["model"]:
-        df = model.add_phenotypes_to_df(test_df)
-        print(df)
-
-    y_pred = df["predicted_func_score"]
-    y_true = test_df["func_score"]
-    print(f"Pearson correlation: {pearsonr(y_pred, y_true)}")
-    df.iloc[:, :-1].head().to_csv(
-        f"data/test{max_mutations}_predictions.csv", index=False
-    )
+    fit_multidms_model(sampled_df, fit_maxiter=fit_maxiter)
 
 
 if __name__ == "__main__":
