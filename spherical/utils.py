@@ -256,4 +256,4 @@ if __name__ == "__main__":
         num_mutations=5,
         simulation_seed=42,
     )
-    sampled_df.to_csv("data/output.csv", index=False)
+    sampled_df.to_csv("data/sampled_mutant_data.csv", index=False)

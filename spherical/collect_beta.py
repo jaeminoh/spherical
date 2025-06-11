@@ -40,11 +40,10 @@ def find_optimal_mutant(model: multidms.Model, num_mutations: int = 5) -> str:
         row_index += 1
 
     # mutate sequence
-
     optimal_sequence = mutate_str(SEQUENCE_WT, positions, new_amino_acids)
-    model = load_model(model_params=650)
 
-    # calculate the log likelihood ratio for the optimal mutant
+    # calculate the ESM score
+    model = load_model(model_params=650)
     final_score = compute_esm_score_str(model, SEQUENCE_WT, optimal_sequence)
     print(f"Final score for the optimal mutant: {final_score}")
 
