@@ -252,7 +252,7 @@ if __name__ == "__main__":
     sampled_df = run_monte_carlo_sampling_and_scoring(
         model,
         SEQUENCE_WT,
-        num_samples=100000,
+        num_samples=1500000,
         num_mutations=5,
         simulation_seed=42,
     )

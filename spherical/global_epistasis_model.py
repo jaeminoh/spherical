@@ -80,15 +80,17 @@ def fit_multidms_model(
 
 
 def main(
-    fit_maxiter: int = 5000, csv_path: str = "data/sampled_mutant_data.csv"
+    fit_maxiter: int = 5000,
+    num_samples: int = 100,
 ) -> None:
     """
     Main function for the MultiDMS fitting and analysis part of the workflow.
 
     Args:
         fit_maxiter (int): Maximum iterations for the MultiDMS model fitting process.
-        csv_path (str): Path to the CSV file containing the sampled data.
+        num_samples (int): Number of samples to use for fitting.
     """
+    csv_path = f"data/sampled_mutant_data_{num_samples}K.csv"
     sampled_df = pd.read_csv(csv_path)
 
     print(f"\n--- Load data from {csv_path} ---")
