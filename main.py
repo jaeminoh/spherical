@@ -1,36 +1,13 @@
-import torch
-import esm
+from esm import pretrained
+from peft import inject_adapter_in_model, LoraConfig
 
-# Load ESM-2 model
-model, alphabet = esm.pretrained.load_model_and_alphabet("checkpoints/esm2_t6_8M_UR50D.pt")
+model_location = "checkpoints/esm2_t33_650M_UR50D.pt"
+model, alphabet = pretrained.load_model_and_alphabet(model_location)
 
-batch_converter = alphabet.get_batch_converter()
-model.eval()  # disables dropout for deterministic results
+# how to inject LoRA adapters into the model
+peft_config = LoraConfig(
+    r=4, lora_alpha=1, bias="all",
+    target_modules=["k_proj", "v_proj", "q_proj", "out_proj", "fc1", "fc2", "dense"])    
+model = inject_adapter_in_model(peft_config, model)
 
-# Prepare data (first 2 sequences from ESMStructuralSplitDataset superfamily / 4)
-data = [
-    ("protein1", "MKTVRQERLKSIVRILERSKEPVSGAQLAEELSVSRQVIVQDIAYLRSLGYNIVATPRGYVLAGG"),
-    ("protein2", "KALTARQQEVFDLIRDHISQTGMPPTRAEIAQRLGFRSPNAAEEHLKALARKGVIEIVSGASRGIRLLQEE"),
-    ("protein2 with mask","KALTARQQEVFDLIRD<mask>ISQTGMPPTRAEIAQRLGFRSPNAAEEHLKALARKGVIEIVSGASRGIRLLQEE"),
-    ("protein3",  "K A <mask> I S Q"),
-]
-batch_labels, batch_strs, batch_tokens = batch_converter(data)
-batch_lens = (batch_tokens != alphabet.padding_idx).sum(1)
-
-# Extract per-residue representations (on CPU)
-with torch.no_grad():
-    results = model(batch_tokens, repr_layers=[6], return_contacts=True)
-token_representations = results["representations"][6]
-
-# Generate per-sequence representations via averaging
-# NOTE: token 0 is always a beginning-of-sequence token, so the first residue is token 1.
-sequence_representations = []
-for i, tokens_len in enumerate(batch_lens):
-    sequence_representations.append(token_representations[i, 1 : tokens_len - 1].mean(0))
-
-# Look at the unsupervised self-attention map contact predictions
-import matplotlib.pyplot as plt
-for (_, seq), tokens_len, attention_contacts in zip(data, batch_lens, results["contacts"]):
-    plt.matshow(attention_contacts[: tokens_len, : tokens_len])
-    plt.title(seq)
-    plt.savefig("main.pdf", format="pdf")
+print(model)
