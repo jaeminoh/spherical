@@ -33,5 +33,17 @@ Go [UniProt](https://www.uniprot.org) and query (taxonomy_id:?????), including p
 - Wenrivirus: 2560254 (10)
 - Unclassified: 2024603 (178)
 
+### Fasta format
+
+```
+> Family | Genus | Species | Strain | Note
+MY...
+```
+For example,
+```
+> Phenuiviridae | Phlebovirus | Rift Valley fever virus | MP-12 | M-segment
+MY...
+```
+
 ## Extract ESM2 embeddings
 run `scripts/extract.py`. But make sure that there is no "/" in the fasta annotation.
