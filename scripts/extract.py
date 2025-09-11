@@ -9,7 +9,8 @@ import pathlib
 
 import torch
 
-from esm import Alphabet, FastaBatchedDataset, ProteinBertModel, pretrained, MSATransformer
+from esm import Alphabet, FastaBatchedDataset, pretrained, MSATransformer
+from transformers import EsmModel
 
 
 def create_parser():
@@ -61,7 +62,10 @@ def create_parser():
 
 
 def run(args):
-    model, alphabet = pretrained.load_model_and_alphabet(args.model_location)
+    alphabet = Alphabet.from_architecture("ESM-1b")
+    #model, alphabet = pretrained.load_model_and_alphabet(args.model_location)
+    model = EsmModel.from_pretrained(args.model_location)
+    model.num_layers = model.config.num_hidden_layers
     model.eval()
     if isinstance(model, MSATransformer):
         raise ValueError(
@@ -92,14 +96,14 @@ def run(args):
             if torch.cuda.is_available() and not args.nogpu:
                 toks = toks.to(device="cuda", non_blocking=True)
 
-            out = model(toks, repr_layers=repr_layers, return_contacts=return_contacts)
+            representation = model(toks)["last_hidden_state"].to(device="cpu")
 
-            logits = out["logits"].to(device="cpu")
-            representations = {
-                layer: t.to(device="cpu") for layer, t in out["representations"].items()
-            }
-            if return_contacts:
-                contacts = out["contacts"].to(device="cpu")
+            #logits = out["logits"].to(device="cpu")
+            #representations = {
+            #    layer: t.to(device="cpu") for layer, t in out["representations"].items()
+            #}
+            #if return_contacts:
+            #    contacts = out["contacts"].to(device="cpu")
 
             for i, label in enumerate(labels):
                 args.output_file = args.output_dir / f"{label}.pt"
@@ -108,22 +112,21 @@ def run(args):
                 truncate_len = min(args.truncation_seq_length, len(strs[i]))
                 # Call clone on tensors to ensure tensors are not views into a larger representation
                 # See https://github.com/pytorch/pytorch/issues/1995
-                if "per_tok" in args.include:
-                    result["representations"] = {
-                        layer: t[i, 1 : truncate_len + 1].clone()
-                        for layer, t in representations.items()
-                    }
+                # if "per_tok" in args.include:
+                #     result["representations"] = {
+                #         layer: t[i, 1 : truncate_len + 1].clone()
+                #         for layer, t in representations.items()
+                #     }
                 if "mean" in args.include:
                     result["mean_representations"] = {
-                        layer: t[i, 1 : truncate_len + 1].mean(0).clone()
-                        for layer, t in representations.items()
+                        model.num_layers: representation[i, 1 : truncate_len + 1].mean(0).clone()
                     }
-                if "bos" in args.include:
-                    result["bos_representations"] = {
-                        layer: t[i, 0].clone() for layer, t in representations.items()
-                    }
-                if return_contacts:
-                    result["contacts"] = contacts[i, : truncate_len, : truncate_len].clone()
+                # if "bos" in args.include:
+                #     result["bos_representations"] = {
+                #         layer: t[i, 0].clone() for layer, t in representations.items()
+                #     }
+                #if return_contacts:
+                #    result["contacts"] = contacts[i, : truncate_len, : truncate_len].clone()
 
                 torch.save(
                     result,

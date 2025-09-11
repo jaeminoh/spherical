@@ -1,63 +1,35 @@
-from transformers import AutoTokenizer, EsmForMaskedLM
-from transformers import Trainer, TrainingArguments, DataCollatorForLanguageModeling
-from torch.utils.data import Dataset, DataLoader
+import torch
+from transformers import EsmModel, AutoTokenizer
+from esm import FastaBatchedDataset, Alphabet
 
-import peft
-from Bio import SeqIO
+
 
 # load model from Hugging Face
-model_name = "facebook/esm2_t33_650M_UR50D"
+model_name = "checkpoints/final_20250911_124633"
+model = EsmModel.from_pretrained(model_name)
 tokenizer = AutoTokenizer.from_pretrained(model_name)
-model = EsmForMaskedLM.from_pretrained(model_name)
+alphabet = Alphabet.from_architecture("ESM-1b")
 
-proteins = []
-for seq_record in SeqIO.parse("assets/Phenuiviridae/Phlebovirus.fasta", "fasta"):
-    proteins.append(str(seq_record.seq))
-
-
-class FastaDataset(Dataset):
-    def __init__(self, path: str, tokenizer: AutoTokenizer):
-        self.sequences = []
-        for seq_record in SeqIO.parse(path, "fasta"):
-            self.sequences.append(
-                tokenizer(str(seq_record.seq), return_tensors="pt")["input_ids"].squeeze()
-            )
-
-    def __len__(self):
-        return len(self.sequences)
-
-    def __getitem__(self, idx: int):
-        return self.sequences[idx]
-
-dataset = FastaDataset("assets/Phenuiviridae/Phlebovirus.fasta", tokenizer)
-
-# LoRA adapter injection
-peft_config = peft.LoraConfig(
-    r=4, lora_alpha=1, bias="all",
-    target_modules=["query", "key", "value", "dense"]) # warning: different from esm github.
-
-model = peft.get_peft_model(model, peft_config)
-print(model.print_trainable_parameters()) # trainable params: 3,520,034 || all params: 654,094,774 || trainable%: 0.5382
-
-
-
-training_args = TrainingArguments(
-    output_dir="checkpoints",
-    eval_strategy="epoch",
-    learning_rate=2e-5,
-    num_train_epochs=3,
+fasta_file = "assets/test.fasta"
+dataset = FastaBatchedDataset.from_file(fasta_file)
+batches = dataset.get_batch_indices(4096, extra_toks_per_seq=1)
+data_loader = torch.utils.data.DataLoader(
+    dataset, collate_fn=alphabet.get_batch_converter(), batch_sampler=batches
 )
+print(f"Read {fasta_file} with {len(dataset)} sequences")
 
-data_collator = DataCollatorForLanguageModeling(tokenizer, pad_to_multiple_of=256)
 
-trainer = Trainer(
-    model=model,
-    args=training_args,
-    train_dataset=dataset,
-    eval_dataset=dataset,
-    data_collator=data_collator,
-    tokenizer=tokenizer,
-)
+model.num_layers = model.config.num_hidden_layers
 
-trainer.train()
+assert all(-(model.num_layers + 1) <= i <= model.num_layers for i in [-1])
+repr_layers = [(i + model.num_layers + 1) % (model.num_layers + 1) for i in [-1]]
 
+for batch_idx, (labels, strs, toks) in enumerate(data_loader):
+    print(
+        f"Processing {batch_idx + 1} of {len(batches)} batches ({toks.size(0)} sequences)"
+    )
+
+    out = model(toks)
+    print(out["last_hidden_state"].shape)
+    if batch_idx == 0:
+        break

@@ -33,6 +33,16 @@ Go [UniProt](https://www.uniprot.org) and query (taxonomy_id:?????), including p
 - Wenrivirus: 2560254 (10)
 - Unclassified: 2024603 (178)
 
+[Note](https://pmc.ncbi.nlm.nih.gov/articles/PMC11494962/): originally "Bunyaviridae" family, but it had been promoted to order "Bunyavirales" (id: 1980410) in 2017, and again class "Bunyaviricetes" (id: 3151693) in 2024.
+
+For virus classification, see [here](https://en.wikipedia.org/wiki/Virus_classification#ICTV_classification).
+
+$$
+\text{species} \subset \text{genus} \subset \text{family} \subset \text{order} \subset \text{class} ...
+$$
+
+
+
 ### Fasta format
 
 ```
