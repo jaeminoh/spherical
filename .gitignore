@@ -1,3 +1,5 @@
+embeddings/
+checkpoints/
 *.npy
 *.txt
 *.pkl
