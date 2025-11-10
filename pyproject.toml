@@ -11,6 +11,7 @@ keywords = ["bioinformatics"]
 urls = {repository = "https://github.com/jaeminoh/SPHERICAL" }
 dependencies = [
     "beartype>=0.21.0",
+    "bio>=1.8.1",
     "fair-esm>=2.0.0",
     "fire>=0.7.0",
     "ipykernel>=6.29.5",
