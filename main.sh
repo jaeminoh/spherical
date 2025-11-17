@@ -1,3 +1,4 @@
-export CUDA_VISIBLE_DEVICES=7
+export CUDA_VISIBLE_DEVICES=0
+export PYTORCH_ALLOC_CONF=expandable_segments:True
 
-python bin/print_residues_entropy.py
+python spherical/esm2/_fold.py
