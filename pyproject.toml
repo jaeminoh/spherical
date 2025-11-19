@@ -17,6 +17,7 @@ dependencies = [
     "matplotlib>=3.10.1",
     "numpy>=2.2.4",
     "pandas>=2.2.3",
+    "pdanalysis>=0.0.4",
     "pre-commit>=4.2.0",
     "ruff>=0.11.6",
     "scikit-learn>=1.6.1",
