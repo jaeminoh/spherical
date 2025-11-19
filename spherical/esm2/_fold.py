@@ -8,14 +8,14 @@ class Fold:
         self.tokenizer = tokenizer
 
     def tokenize(self, sequence: str):
-        input_ids = self.tokenizer.encode(
+        input_ids = self.tokenizer(
             sequence, return_tensors="pt", add_special_tokens=False
         )
         return input_ids
 
     def __call__(self, input_ids):
         with torch.no_grad():
-            outputs = self.model(input_ids)
+            outputs = self.model(**input_ids)
         return outputs  # Returns the folded structure or relevant outputs
 
 
