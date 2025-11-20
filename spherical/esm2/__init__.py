@@ -5,4 +5,7 @@ from ._scores import (
     Entropy as Entropy,
 )
 
-from ._fold import Fold as Fold
+from ._fold import Fold as Fold, fold_and_save as fold_and_save
+from ._utils import load_model as load_model
+
+from ._types import EsmModels as EsmModels

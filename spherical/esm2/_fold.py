@@ -1,10 +1,14 @@
 import torch
 from transformers import EsmTokenizer, EsmForProteinFolding
 
+import spherical
+
 
 class Fold:
-    def __init__(self, model: EsmForProteinFolding, tokenizer: EsmTokenizer):
-        self.model = model
+    def __init__(
+        self, model: EsmForProteinFolding, tokenizer: EsmTokenizer, device: str = "cuda"
+    ):
+        self.model = model.to(device)
         self.tokenizer = tokenizer
 
     def tokenize(self, sequence: str):
@@ -18,36 +22,51 @@ class Fold:
             outputs = self.model(**input_ids)
         return outputs  # Returns the folded structure or relevant outputs
 
+    def predict_and_save_pdb(self, sequence: str, filename: str):
+        out = self.model.infer(sequence)
+        pdb = self.model.output_to_pdb(out)
+        with open(filename, "w") as f:
+            f.write("".join(pdb))
+
+
+def fold_and_save(model: EsmForProteinFolding, sequence: str, filename: str):
+    out = model.infer(sequence)
+    pdb = model.output_to_pdb(out)
+    with open(filename, "w") as f:
+        f.write("".join(pdb))
+
 
 if __name__ == "__main__":
-    # example script, must be run at the repository root
-    import time
+    # example usage: python spherical/esm2/_fold.py --position=335 --new_aa="S"
+    import fire
+    import spherical
 
-    from transformers import AutoTokenizer
-    from Bio import SeqIO
+    model, _ = spherical.esm2.load_model(EsmForProteinFolding, spherical.ESMFOLD)
+    model.to("cuda")
 
-    wt = SeqIO.read("assets/RVFV.fasta", "fasta").seq
-    wt = str(wt)
+    def main(position: int, new_aa: str):
+        protein = spherical.RVFV_MP12
+        mutant = protein._mutate(position, new_aa)
+        spherical.esm2.fold_and_save(
+            model, mutant, f"results/rvfv/{position}{new_aa}.pdb"
+        )
 
-    print("Loading model...")
-    tic = time.time()
-    model = EsmForProteinFolding.from_pretrained("facebook/esmfold_v1")
-    tokenizer = AutoTokenizer.from_pretrained("facebook/esmfold_v1")
-    toc = time.time()
-    print(f"Done! Took {toc - tic:.2f} seconds.")
+    fire.Fire(main)
 
-    folding = Fold(model, tokenizer)
+    # import time
+    # import spherical
 
-    print("Moving tensors to gpus...")
-    tic = time.time()
-    input_ids = folding.tokenize(wt).to("cuda")
-    folding.model.to("cuda")
-    toc = time.time()
-    print(f"Done! Took {toc - tic:.2f} seconds.")
+    # protein = spherical.RVFV_MP12
+    # model, tokenizer = spherical.esm2.load_model(EsmForProteinFolding, spherical.ESMFOLD)
+    # model.to("cuda")
 
-    print("Folding...")
-    tic = time.time()
-    with torch.no_grad():
-        outputs = folding(input_ids)
-    toc = time.time()
-    print(f"Done! Took {toc - tic:.2f} seconds.")
+    # all_mutations, positions, mutated_aas = protein.get_all_single_mutations(spherical.AMINO_ACIDS)
+
+    # tic = time.time()
+    # filename = "results//rvfv/wt.pdb"
+    # spherical.esm2.fold_and_save(model, protein.sequence, filename)
+    # for seq, pos, aa in zip(all_mutations, positions, mutated_aas):
+    #     filename = f"results/rvfv/{pos + 1}{aa}.pdb"  # 1-based indexing
+    #     spherical.esm2.fold_and_save(model, seq, filename)
+    #     toc = time.time()
+    #     print(f"Saved: {pos + 1}{aa}, {toc - tic:.2f}s")
