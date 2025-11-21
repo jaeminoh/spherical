@@ -22,7 +22,9 @@ class ReferenceProteinSequence:
             seq_list[pos] = aa
         return "".join(seq_list)
 
-    def get_all_single_mutations(self, all_amino_acids: str) -> list[str]:
+    def get_all_single_mutations(
+        self, all_amino_acids: str
+    ) -> tuple[list[str], list[int], list[str]]:
         """Generate all single amino acid mutations for the sequence."""
         single_mutations = []
         positions = []

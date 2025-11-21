@@ -39,17 +39,19 @@ def fold_and_save(model: EsmForProteinFolding, sequence: str, filename: str):
 if __name__ == "__main__":
     # example usage: python spherical/esm2/_fold.py --position=335 --new_aa="S"
     import fire
+    from tqdm import tqdm
     import spherical
 
     model, _ = spherical.esm2.load_model(EsmForProteinFolding, spherical.ESMFOLD)
     model.to("cuda")
 
-    def main(position: int, new_aa: str):
+    def main(positions: list[int], new_aas: list[str]):
         protein = spherical.RVFV_MP12
-        mutant = protein._mutate(position, new_aa)
-        spherical.esm2.fold_and_save(
-            model, mutant, f"results/rvfv/{position}{new_aa}.pdb"
-        )
+        for position, new_aa in tqdm(zip(positions, new_aas)):
+            mutant = protein._mutate(position, new_aa)
+            spherical.esm2.fold_and_save(
+                model, mutant, f"results/rvfv/{position}{new_aa}.pdb"
+            )
 
     fire.Fire(main)
 
