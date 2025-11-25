@@ -36,12 +36,12 @@ def fold_and_save(
         sequence, return_tensors="pt", add_special_tokens=False
     ).to(next(model.parameters()).device)
     with torch.no_grad():
-        out = model(**sequence_tokens, num_recycles=0)
+        out = model(**sequence_tokens, num_recycles=4)
     pdb = model.output_to_pdb(out)
     with open(filename, "w") as f:
         f.write("".join(pdb))
     print(f"Saved folded structure to {filename}")
-    print(f"Predicted TM-score: {out['ptm'].item():.2f}")
+    # print(f"Predicted TM-score: {out['ptm'].item():.2f}")
 
 
 if __name__ == "__main__":
@@ -61,6 +61,9 @@ if __name__ == "__main__":
         positions = df["pos"].tolist()
         new_aas = df["mt"].tolist()
         protein = spherical.RVFV_MP12
+        spherical.esm2.fold_and_save(
+            model, tokenizer, protein.sequence, "results/rvfv/wt.pdb"
+        )
 
         for position, new_aa in tqdm(zip(positions, new_aas)):
             mutant = protein._mutate(position, new_aa)

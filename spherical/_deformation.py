@@ -203,8 +203,10 @@ def load_deformation_kwargs(args):
     return {k: getattr(args, k) for k in kwargs_list}
 
 
+args = parse_args()
+
+
 def main():
-    args = parse_args()
     pathA, pathB = parse_input_paths(args)
     protein_kwargs = load_protein_kwargs(args)
     deform_kwargs = load_deformation_kwargs(args)
@@ -221,4 +223,26 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    import pandas as pd
+    import fire
+
+    def _main(csv_name: str, virus: str = "rvfv"):
+        dir = f"results/{virus}"
+        wt = f"{dir}/wt.pdb"
+        df = pd.read_csv(f"{dir}/{csv_name}")
+        pos, mt = df["pos"].to_list(), df["mt"].to_list()
+
+        protein_kwargs = load_protein_kwargs(args)
+        deform_kwargs = load_deformation_kwargs(args)
+
+        rmsd_list = []
+        wt = load_protein_object([wt], **protein_kwargs)
+        for p, m in zip(pos, mt):
+            mutant = load_protein_object([f"{dir}/{p}{m}.pdb"], **protein_kwargs)
+            rmsd = Deformation(wt, mutant, **deform_kwargs)
+            rmsd.run()
+            rmsd_list.append(rmsd.rmsd)
+        df["rmsd"] = rmsd_list
+        df.to_csv(f"{dir}/{csv_name}_rmsd.csv", index=False)
+
+    fire.Fire(_main)
