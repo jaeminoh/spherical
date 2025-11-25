@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 
 @dataclass
-class ReferenceProteinSequence:
+class Protein:
     sequence: str
 
     def _mutate(self, position: int, new_aa: str) -> str:

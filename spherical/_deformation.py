@@ -88,7 +88,7 @@ def parse_args():
         "--method",
         nargs="+",
         type=str,
-        default=["strain"],
+        default=["rmsd"],
         help="Deformation method: 'all' will automatically calculate everything. Multiple methods may be provided separated by spaces. Accepted methods:"
         + "\n\t'mut_dist' :: Distance from nearest mutated residue"
         + "\n\t'strain' :: Effective Strain"
