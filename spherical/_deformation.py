@@ -120,6 +120,12 @@ def parse_args():
         "-o", "--output", default="output.csv", type=str, help="Path to output file."
     )
 
+    parser.add_argument(
+        "--csv_name",
+        type=str,
+        help="Name of the CSV file that holds positions and mutations.",
+    )
+
     return parser.parse_args()
 
 
@@ -224,12 +230,15 @@ def main():
 
 if __name__ == "__main__":
     import pandas as pd
+    from tqdm import tqdm
     import fire
 
-    def _main(csv_name: str, virus: str = "rvfv"):
+    def _main(
+        csv_name: str = args.csv_name, virus: str = "rvfv", method: str = "recycle4"
+    ):
         dir = f"results/{virus}"
-        wt = f"{dir}/wt.pdb"
-        df = pd.read_csv(f"{dir}/{csv_name}")
+        wt = f"{dir}/{method}/wt.pdb"
+        df = pd.read_csv(f"{dir}/{csv_name}.csv")
         pos, mt = df["pos"].to_list(), df["mt"].to_list()
 
         protein_kwargs = load_protein_kwargs(args)
@@ -237,12 +246,14 @@ if __name__ == "__main__":
 
         rmsd_list = []
         wt = load_protein_object([wt], **protein_kwargs)
-        for p, m in zip(pos, mt):
-            mutant = load_protein_object([f"{dir}/{p}{m}.pdb"], **protein_kwargs)
+        for p, m in tqdm(zip(pos, mt)):
+            mutant = load_protein_object(
+                [f"{dir}/{method}/{p}{m}.pdb"], **protein_kwargs
+            )
             rmsd = Deformation(wt, mutant, **deform_kwargs)
             rmsd.run()
             rmsd_list.append(rmsd.rmsd)
         df["rmsd"] = rmsd_list
-        df.to_csv(f"{dir}/{csv_name}_rmsd.csv", index=False)
+        df.to_csv(f"{dir}/{method}/{csv_name}.csv", index=False)
 
     fire.Fire(_main)

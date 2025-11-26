@@ -41,7 +41,7 @@ def fold_and_save(
     with open(filename, "w") as f:
         f.write("".join(pdb))
     print(f"Saved folded structure to {filename}")
-    # print(f"Predicted TM-score: {out['ptm'].item():.2f}")
+    print(f"Predicted TM-score: {out['ptm'].item():.2f}")
 
 
 if __name__ == "__main__":
@@ -49,6 +49,7 @@ if __name__ == "__main__":
     import fire
     from tqdm import tqdm
     import pandas as pd
+
     import spherical
 
     model, tokenizer = spherical.esm2.load_model(
@@ -56,37 +57,23 @@ if __name__ == "__main__":
     )
     model.to("cuda")
 
-    def main(filepath: str):
-        df = pd.read_csv(filepath)
+    def main(csv_name: str, virus: str = "rvfv", method: str = "recycle4"):
+        dir = f"results/{virus}"
+        df = pd.read_csv(f"{dir}/{csv_name}.csv")
         positions = df["pos"].tolist()
         new_aas = df["mt"].tolist()
         protein = spherical.RVFV_MP12
         spherical.esm2.fold_and_save(
-            model, tokenizer, protein.sequence, "results/rvfv/wt.pdb"
+            model, tokenizer, protein.sequence, f"results/{virus}/{method}/wt.pdb"
         )
 
         for position, new_aa in tqdm(zip(positions, new_aas)):
             mutant = protein._mutate(position, new_aa)
             spherical.esm2.fold_and_save(
-                model, tokenizer, mutant, f"results/rvfv/{position}{new_aa}.pdb"
+                model,
+                tokenizer,
+                mutant,
+                f"results/{virus}/{method}/{position}{new_aa}.pdb",
             )
 
     fire.Fire(main)
-
-    # import time
-    # import spherical
-
-    # protein = spherical.RVFV_MP12
-    # model, tokenizer = spherical.esm2.load_model(EsmForProteinFolding, spherical.ESMFOLD)
-    # model.to("cuda")
-
-    # all_mutations, positions, mutated_aas = protein.get_all_single_mutations(spherical.AMINO_ACIDS)
-
-    # tic = time.time()
-    # filename = "results//rvfv/wt.pdb"
-    # spherical.esm2.fold_and_save(model, protein.sequence, filename)
-    # for seq, pos, aa in zip(all_mutations, positions, mutated_aas):
-    #     filename = f"results/rvfv/{pos + 1}{aa}.pdb"  # 1-based indexing
-    #     spherical.esm2.fold_and_save(model, seq, filename)
-    #     toc = time.time()
-    #     print(f"Saved: {pos + 1}{aa}, {toc - tic:.2f}s")
