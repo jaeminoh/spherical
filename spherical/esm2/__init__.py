@@ -8,7 +8,7 @@ from ._scores import (
 from ._fold import Fold as Fold, fold_and_save as fold_and_save
 from ._utils import load_model as load_model
 
-from ._contact import get_contact_differences as get_contact_differences
+from ._contact import ContactPredictor as ContactPredictor
 
 from ._types import EsmModels as EsmModels
 
