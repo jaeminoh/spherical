@@ -14,7 +14,7 @@ class ContactPredictor:
         predictions = self.model.predict_contacts(batch_tokens)[0].cpu()
         return predictions.detach().numpy()
 
-    def get_contact_differences_vector(
+    def get_contact_differences(
         self,
         wt_sequence: str,
         sequences: list[str],
@@ -22,31 +22,26 @@ class ContactPredictor:
         aas: list[str],
     ):
         wt_contact = self.get_contact_matrix("wt", wt_sequence)  # wt
-        mse = []
-        mae = []
-        for sequence, pos, aa in tqdm(zip(sequences, positions, aas)):
-            name = f"{pos}{aa}"
-            contact = self.get_contact_matrix(name, sequence)
-            diff = contact[pos] - wt_contact[pos]
-            mse.append((diff**2).mean())
-            mae.append(np.abs(diff).mean())
-        return mse, mae
 
-    def get_contact_differences_matrix(
-        self,
-        wt_sequence: str,
-        sequences: list[str],
-        positions: list[int],
-        aas: list[str],
-    ):
-        wt_contact = self.get_contact_matrix("wt", wt_sequence)  # wt
-        diffs = []
+        vector_norms = {"l1": [], "l2": []}
+        matrix_norms = {
+            "operator_l1": [],
+            "operator_l2": [],
+            "frobenius_1": [],
+            "frobenius_2": [],
+        }
 
         for sequence, pos, aa in tqdm(zip(sequences, positions, aas)):
             name = f"{pos}{aa}"
-            contact = self.get_contact_matrix(name, sequence)
-            diff = np.linalg.norm(contact - wt_contact)  # Frobenius norm
-            diffs.append(diff)
+            diff = wt_contact - self.get_contact_matrix(name, sequence)
+            vector_norms["l1"].append(np.linalg.norm(diff[pos], ord=1))
+            vector_norms["l2"].append(np.linalg.norm(diff[pos], ord=2))
+            matrix_norms["operator_l1"].append(np.linalg.norm(diff, ord=1))
+            matrix_norms["operator_l2"].append(np.linalg.norm(diff, ord=2))
+            matrix_norms["frobenius_1"].append(np.abs(diff).sum())
+            matrix_norms["frobenius_2"].append(np.linalg.norm(diff, ord="fro"))
+
+        return vector_norms, matrix_norms
 
 
 if __name__ == "__main__":
@@ -63,16 +58,9 @@ if __name__ == "__main__":
     wt = spherical.RVFV_MP12
     sequences, positions, aas = wt.get_all_single_mutations(spherical.AMINO_ACIDS)
 
-    diffs = contact.get_contact_differences_matrix(
+    vector_norms, matrix_norms = contact.get_contact_differences(
         wt.sequence, sequences, positions, aas
     )
-    pd.DataFrame({"pos": positions, "aa": aas, "diffs": diffs}).to_csv(
+    pd.DataFrame({"pos": positions, "mt": aas, **vector_norms, **matrix_norms}).to_csv(
         "results/rvfv/contact_matrix_diffs.csv", index=False
     )
-
-    # np.savez(
-    #     "results/rvfv/esm2_contact_diffs.npz",
-    #     diffs=np.stack(diffs),
-    #     positions=positions,
-    #     mt=aas,
-    # )
