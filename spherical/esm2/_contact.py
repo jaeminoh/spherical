@@ -1,3 +1,4 @@
+import torch
 from esm import ESM2, BatchConverter
 from tqdm import tqdm
 import numpy as np
@@ -11,7 +12,8 @@ class ContactPredictor:
     def get_contact_matrix(self, name: str, sequence: str):
         *_, batch_tokens = self.batch_converter([(name, sequence)])
         batch_tokens = batch_tokens.to(next(self.model.parameters()).device)
-        predictions = self.model.predict_contacts(batch_tokens)[0].cpu()
+        with torch.no_grad():
+            predictions = self.model.predict_contacts(batch_tokens)[0].cpu()
         return predictions.detach().numpy()
 
     def get_contact_differences(
