@@ -1,26 +1,25 @@
-from transformers import EsmForMaskedLM, EsmTokenizer
+from esm import ESM2, Alphabet
 import torch
 import numpy as np
 
 
 class Scores:
-    def __init__(self, model: EsmForMaskedLM, tokenizer: EsmTokenizer):
+    def __init__(self, model: ESM2, tokenizer: Alphabet):
         self.model = model
         self.tokenizer = tokenizer
+        self.batch_converter = self.tokenizer.get_batch_converter()
 
     def compute_ids(self, wt: str, mt: str):
-        wt_ids = self.tokenizer.encode(
-            wt, return_tensors="pt"
-        ).squeeze()  # (seq_len + 2)
-        mt_ids = self.tokenizer.encode(mt, return_tensors="pt").squeeze()
+        *_, toks = self.batch_converter([("wt", wt), ("mt", mt)])
+        wt_ids, mt_ids = toks.to(next(self.model.parameters()).device)
         return wt_ids, mt_ids, (wt_ids != mt_ids)
 
     def compute_logits(self, input_ids: torch.Tensor):
         if input_ids.dim() == 1:
             input_ids = input_ids[None]  # (1, seq_len + 2)
         with torch.no_grad():
-            logits = self.model(input_ids).logits.squeeze()
-        return logits
+            logits = self.model(input_ids)["logits"].to(device="cpu")
+        return logits[0]
 
     def compute_score(self, log_probs, wt_ids, mt_ids):
         rows = np.arange(log_probs.shape[0])
@@ -41,23 +40,23 @@ class Scores:
 
 
 class MaskedMarginal(Scores):
-    """
+    r"""
     $$\sum_{i \in M} \log p(x_i^{mt} | x_{\setminus M}) - \log p(x_i^{wt} | x_{\setminus M})$$
     """
 
-    def __init__(self, model: EsmForMaskedLM, tokenizer: EsmTokenizer):
+    def __init__(self, model: ESM2, tokenizer: Alphabet):
         super().__init__(model, tokenizer)
 
     def get_input_ids(self, wt_ids, mt_ids, mutated):
-        return (~mutated) * wt_ids + mutated * self.tokenizer.mask_token_id
+        return (~mutated) * wt_ids + mutated * self.tokenizer.mask_idx
 
 
 class MutantMarginal(Scores):
-    """
+    r"""
     \sum_{i \in M} \log p(x_i^{mt} | x^{mt}) - \log p(x_i^{wt} | x^{mt})
     """
 
-    def __init__(self, model: EsmForMaskedLM, tokenizer: EsmTokenizer):
+    def __init__(self, model: ESM2, tokenizer: Alphabet):
         super().__init__(model, tokenizer)
 
     def get_input_ids(self, wt_ids, mt_ids, mutated):
@@ -65,11 +64,11 @@ class MutantMarginal(Scores):
 
 
 class WildtypeMarginal(Scores):
-    """
+    r"""
     $$\sum_{i \in M} \log p(x_i^{mt} | x^{wt}) - \log p(x_i^{wt} | x^{wt})$$
     """
 
-    def __init__(self, model: EsmForMaskedLM, tokenizer: EsmTokenizer):
+    def __init__(self, model: ESM2, tokenizer: Alphabet):
         super().__init__(model, tokenizer)
 
     def get_input_ids(self, wt_ids, mt_ids, mutated):
@@ -77,20 +76,34 @@ class WildtypeMarginal(Scores):
 
 
 class Entropy(Scores):
-    """
+    r"""
     For a position i,
     $$\sum_{a \in A} - p(a) \log p(a)$$
     """
 
-    def __init__(self, model: EsmForMaskedLM, tokenizer: EsmTokenizer):
+    def __init__(self, model: ESM2, tokenizer: Alphabet):
         super().__init__(model, tokenizer)
 
     def __call__(self, sequence: str):
-        input_ids = self.tokenizer.encode(sequence, return_tensors="pt").squeeze()
-
+        *_, input_ids = self.batch_converter([("seq", sequence)])
+        input_ids = input_ids.to(next(self.model.parameters()).device)
         logits = self.compute_logits(input_ids).squeeze()  # (seq_len + 2, vocab_size)
         probs = torch.nn.functional.softmax(logits, dim=-1)
         log_probs = torch.nn.functional.log_softmax(logits, dim=-1)
 
         entropy = -(probs * log_probs).sum(dim=-1)  # (seq_len + 2,)
         return entropy[1:-1]  # (seq_len,) exclude BOS and EOS
+
+
+if __name__ == "__main__":
+    import spherical
+
+    model, alphabet = spherical.esm2.load_model_and_alphabet(spherical.FAIR_ESM2_650M)
+    model = model.eval()
+    wt = spherical.RVFV_MP12
+    mt = wt._mutate(10, "A")
+
+    print(MaskedMarginal(model, alphabet)(wt.sequence, mt))
+    print(MutantMarginal(model, alphabet)(wt.sequence, mt))
+    print(WildtypeMarginal(model, alphabet)(wt.sequence, mt))
+    print(Entropy(model, alphabet)(wt.sequence))
