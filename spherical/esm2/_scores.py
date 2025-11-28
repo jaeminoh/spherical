@@ -1,6 +1,5 @@
 from esm import ESM2, Alphabet
 import torch
-import numpy as np
 
 
 class Scores:
@@ -18,11 +17,11 @@ class Scores:
         if input_ids.dim() == 1:
             input_ids = input_ids[None]  # (1, seq_len + 2)
         with torch.no_grad():
-            logits = self.model(input_ids)["logits"].to(device="cpu")
-        return logits[0]
+            logits = self.model(input_ids)["logits"]
+        return logits.squeeze()
 
     def compute_score(self, log_probs, wt_ids, mt_ids):
-        rows = np.arange(log_probs.shape[0])
+        rows = torch.arange(log_probs.shape[0])
         assert len(rows) == len(wt_ids) == len(mt_ids), "Size mismatch!"
         log_probs_wt = log_probs[rows, wt_ids]
         log_probs_mt = log_probs[rows, mt_ids]
@@ -36,7 +35,7 @@ class Scores:
         input_ids = self.get_input_ids(wt_ids, mt_ids, mutated)
         logits = self.compute_logits(input_ids)
         log_probs = torch.nn.functional.log_softmax(logits, dim=-1) * mutated[:, None]
-        return self.compute_score(log_probs, wt_ids, mt_ids)
+        return self.compute_score(log_probs, wt_ids, mt_ids).to(device="cpu").numpy()
 
 
 class MaskedMarginal(Scores):
@@ -92,18 +91,39 @@ class Entropy(Scores):
         log_probs = torch.nn.functional.log_softmax(logits, dim=-1)
 
         entropy = -(probs * log_probs).sum(dim=-1)  # (seq_len + 2,)
-        return entropy[1:-1]  # (seq_len,) exclude BOS and EOS
+        return entropy[1:-1].to(device="cpu").numpy()  # (seq_len,) exclude BOS and EOS
 
 
 if __name__ == "__main__":
+    import fire
+    from tqdm import tqdm
+    import pandas as pd
+
     import spherical
 
     model, alphabet = spherical.esm2.load_model_and_alphabet(spherical.FAIR_ESM2_650M)
-    model = model.eval()
+    model = model.eval().cuda()
     wt = spherical.RVFV_MP12
-    mt = wt._mutate(10, "A")
 
-    print(MaskedMarginal(model, alphabet)(wt.sequence, mt))
-    print(MutantMarginal(model, alphabet)(wt.sequence, mt))
-    print(WildtypeMarginal(model, alphabet)(wt.sequence, mt))
-    print(Entropy(model, alphabet)(wt.sequence))
+    def main(
+        method: str = "masked_marginal", csv_name: str = "all", virus: str = "rvfv"
+    ):
+        scores = []
+        if method == "masked_marginal":
+            score = MaskedMarginal(model, alphabet)
+        elif method == "wiltype_marginal":
+            score = WildtypeMarginal(model, alphabet)
+        elif method == "mutant_marginal":
+            score = MutantMarginal(model, alphabet)
+
+        dir_path = f"results/{virus}"
+        df = pd.read_csv(f"{dir_path}/{csv_name}.csv")
+
+        for pos, mt in tqdm(zip(df["pos"], df["mt"])):
+            mt = wt.mutate(pos, mt)
+            scores.append(score(wt.sequence, mt.sequence))
+
+        df["score"] = scores
+        df.to_csv("results/rvfv/all_scored.csv", index=False)
+
+    fire.Fire(main)
