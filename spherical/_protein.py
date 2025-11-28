@@ -10,17 +10,21 @@ class Protein:
         seq_list[position] = new_aa
         return "".join(seq_list)
 
-    def mutate(self, poisitions: list[int], new_aas: list[str]) -> str:
+    def mutate(self, positions: list[int], new_aas: list[str]) -> str:
         """Mutate multiple positions in the sequence.
 
         Args:
-            poisitions (list[int]): List of positions to mutate.
+            positions (list[int]): List of positions to mutate.
             new_aas (list[str]): List of new amino acids corresponding to the positions.
         """
-        seq_list = list(self.sequence)
-        for pos, aa in zip(poisitions, new_aas):
-            seq_list[pos] = aa
-        return "".join(seq_list)
+        if isinstance(positions, int) and isinstance(new_aas, str):
+            mutant_sequence = self._mutate(positions, new_aas)
+        else:
+            seq_list = list(self.sequence)
+            for pos, aa in zip(positions, new_aas):
+                seq_list[pos] = aa
+            mutant_sequence = "".join(seq_list)
+        return Protein(mutant_sequence)
 
     def get_all_single_mutations(
         self, all_amino_acids: str
