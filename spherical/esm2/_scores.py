@@ -35,7 +35,7 @@ class Scores:
         input_ids = self.get_input_ids(wt_ids, mt_ids, mutated)
         logits = self.compute_logits(input_ids)
         log_probs = torch.nn.functional.log_softmax(logits, dim=-1) * mutated[:, None]
-        return self.compute_score(log_probs, wt_ids, mt_ids).to(device="cpu").numpy()
+        return self.compute_score(log_probs, wt_ids, mt_ids)
 
 
 class MaskedMarginal(Scores):
@@ -91,7 +91,7 @@ class Entropy(Scores):
         log_probs = torch.nn.functional.log_softmax(logits, dim=-1)
 
         entropy = -(probs * log_probs).sum(dim=-1)  # (seq_len + 2,)
-        return entropy[1:-1].to(device="cpu").numpy()  # (seq_len,) exclude BOS and EOS
+        return entropy[1:-1]  # (seq_len,) exclude BOS and EOS
 
 
 if __name__ == "__main__":
@@ -103,15 +103,19 @@ if __name__ == "__main__":
 
     model, alphabet = spherical.esm2.load_model_and_alphabet(spherical.FAIR_ESM2_650M)
     model = model.eval().cuda()
-    wt = spherical.RVFV_MP12
 
     def main(
         method: str = "masked_marginal", csv_name: str = "all", virus: str = "rvfv"
     ):
+        if virus == "rvfv":
+            wt = spherical.RVFV_MP12
+        elif virus == "cov2":
+            wt = spherical.SARS_COV2_SPIKE
+
         scores = []
         if method == "masked_marginal":
             score = MaskedMarginal(model, alphabet)
-        elif method == "wiltype_marginal":
+        elif method == "wildtype_marginal":
             score = WildtypeMarginal(model, alphabet)
         elif method == "mutant_marginal":
             score = MutantMarginal(model, alphabet)
@@ -121,9 +125,9 @@ if __name__ == "__main__":
 
         for pos, mt in tqdm(zip(df["pos"], df["mt"])):
             mt = wt.mutate(pos, mt)
-            scores.append(score(wt.sequence, mt.sequence))
+            scores.append(score(wt.sequence, mt.sequence).item())
 
-        df["score"] = scores
-        df.to_csv("results/rvfv/all_scored.csv", index=False)
+        df[method] = scores
+        df.to_csv(f"results/{virus}/{csv_name}_{method}.csv", index=False)
 
     fire.Fire(main)

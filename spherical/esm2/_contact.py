@@ -1,7 +1,6 @@
 import torch
 from esm import ESM2, BatchConverter
 from tqdm import tqdm
-import numpy as np
 
 
 class ContactPredictor:
@@ -13,8 +12,8 @@ class ContactPredictor:
         *_, batch_tokens = self.batch_converter([(name, sequence)])
         batch_tokens = batch_tokens.to(next(self.model.parameters()).device)
         with torch.no_grad():
-            predictions = self.model.predict_contacts(batch_tokens)[0].cpu()
-        return predictions.detach().numpy()
+            predictions = self.model.predict_contacts(batch_tokens)[0]
+        return predictions
 
     def get_contact_differences(
         self,
@@ -36,19 +35,29 @@ class ContactPredictor:
         for sequence, pos, aa in tqdm(zip(sequences, positions, aas)):
             name = f"{pos}{aa}"
             diff = wt_contact - self.get_contact_matrix(name, sequence)
-            vector_norms["l1"].append(np.linalg.norm(diff[pos], ord=1))
-            vector_norms["l2"].append(np.linalg.norm(diff[pos], ord=2))
-            matrix_norms["operator_l1"].append(np.linalg.norm(diff, ord=1))
-            matrix_norms["operator_l2"].append(np.linalg.norm(diff, ord=2))
-            matrix_norms["frobenius_1"].append(np.abs(diff).sum())
-            matrix_norms["frobenius_2"].append(np.linalg.norm(diff, ord="fro"))
-
+            vector_norms["l1"].append(
+                torch.linalg.norm(diff[pos], ord=1).to("cpu").item()
+            )
+            vector_norms["l2"].append(
+                torch.linalg.norm(diff[pos], ord=2).to("cpu").item()
+            )
+            matrix_norms["operator_l1"].append(
+                torch.linalg.norm(diff, ord=1).to("cpu").item()
+            )
+            matrix_norms["operator_l2"].append(
+                torch.linalg.norm(diff, ord=2).to("cpu").item()
+            )
+            matrix_norms["frobenius_1"].append(abs(diff).sum().to("cpu").item())
+            matrix_norms["frobenius_2"].append(
+                torch.linalg.norm(diff, ord="fro").to("cpu").item()
+            )
         return vector_norms, matrix_norms
 
 
 if __name__ == "__main__":
     # Example usage: python spherical/esm2/_contact.py
     import pandas as pd
+    import fire
 
     import spherical
 
@@ -57,12 +66,21 @@ if __name__ == "__main__":
     batch_converter = alphabet.get_batch_converter()
     contact = ContactPredictor(model, batch_converter)
 
-    wt = spherical.RVFV_MP12
-    sequences, positions, aas = wt.get_all_single_mutations(spherical.AMINO_ACIDS)
+    def main(virus: str):
+        if virus == "rvfv":
+            wt = spherical.RVFV_MP12
+        elif virus == "cov2":
+            wt = spherical.SARS_COV2_SPIKE
+        else:
+            raise ValueError(f"Unknown virus: {virus}")
 
-    vector_norms, matrix_norms = contact.get_contact_differences(
-        wt.sequence, sequences, positions, aas
-    )
-    pd.DataFrame({"pos": positions, "mt": aas, **vector_norms, **matrix_norms}).to_csv(
-        "results/rvfv/contact_matrix_diffs.csv", index=False
-    )
+        sequences, positions, aas = wt.get_all_single_mutations(spherical.AMINO_ACIDS)
+
+        vector_norms, matrix_norms = contact.get_contact_differences(
+            wt.sequence, sequences, positions, aas
+        )
+        pd.DataFrame(
+            {"pos": positions, "mt": aas, **vector_norms, **matrix_norms}
+        ).to_csv(f"results/{virus}/all_single.csv", index=False)
+
+    fire.Fire(main)
