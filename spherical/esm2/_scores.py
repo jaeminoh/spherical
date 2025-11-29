@@ -94,40 +94,15 @@ class Entropy(Scores):
         return entropy[1:-1]  # (seq_len,) exclude BOS and EOS
 
 
-if __name__ == "__main__":
-    import fire
-    from tqdm import tqdm
-    import pandas as pd
+class ContactPredictor:
+    def __init__(self, model: ESM2, alphabet: Alphabet):
+        self.model = model
+        self.alphabet = alphabet
+        self.batch_converter = alphabet.get_batch_converter()
 
-    import spherical
-
-    model, alphabet = spherical.esm2.load_model_and_alphabet(spherical.FAIR_ESM2_650M)
-    model = model.eval().cuda()
-
-    def main(
-        method: str = "masked_marginal", csv_name: str = "all", virus: str = "rvfv"
-    ):
-        if virus == "rvfv":
-            wt = spherical.RVFV_MP12
-        elif virus == "cov2":
-            wt = spherical.SARS_COV2_SPIKE
-
-        scores = []
-        if method == "masked_marginal":
-            score = MaskedMarginal(model, alphabet)
-        elif method == "wildtype_marginal":
-            score = WildtypeMarginal(model, alphabet)
-        elif method == "mutant_marginal":
-            score = MutantMarginal(model, alphabet)
-
-        dir_path = f"results/{virus}"
-        df = pd.read_csv(f"{dir_path}/{csv_name}.csv")
-
-        for pos, mt in tqdm(zip(df["pos"], df["mt"])):
-            mt = wt.mutate(pos, mt)
-            scores.append(score(wt.sequence, mt.sequence).item())
-
-        df[method] = scores
-        df.to_csv(f"results/{virus}/{csv_name}_{method}.csv", index=False)
-
-    fire.Fire(main)
+    def get_contact_matrix(self, name: str, sequence: str):
+        *_, batch_tokens = self.batch_converter([(name, sequence)])
+        batch_tokens = batch_tokens.to(next(self.model.parameters()).device)
+        with torch.no_grad():
+            predictions = self.model.predict_contacts(batch_tokens)[0]
+        return predictions

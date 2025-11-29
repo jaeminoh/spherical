@@ -1,12 +1,5 @@
-*.sh
-*.npz
-*.csv
+results/
 *.pdb
-embeddings/
-checkpoints/
-*.pdf
-*.ipynb
-RVFV/
 .DS_Store
 .venv/
 __pycache__/

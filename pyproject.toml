@@ -8,7 +8,7 @@ authors = [
   {name = "Jaemin Oh", email = "jaeminoh.math@gmail.com"},
 ]
 keywords = ["bioinformatics"]
-urls = {repository = "https://github.com/jaeminoh/SPHERICAL" }
+urls = {repository = "https://github.com/jaeminoh/spherical" }
 dependencies = [
     "beartype>=0.21.0",
     "bio>=1.8.1",

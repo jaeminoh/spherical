@@ -14,7 +14,7 @@ class Protein:
         seq_list[position] = new_aa
         return "".join(seq_list)
 
-    def mutate(self, positions: list[int], new_aas: list[str]) -> str:
+    def mutate(self, positions: list[int], new_aas: list[str]) -> "Protein":
         """Mutate multiple positions in the sequence.
 
         Args:
@@ -108,7 +108,7 @@ if __name__ == "__main__":
             names.append(spherical.make_name(position, mt_aa))
 
         pd.DataFrame({"name": names}).to_csv(
-            f"results/{virus}/some_multiple.csv", index=False
+            f"results/{virus}/{num_substitutions}subs.csv", index=False
         )
 
     fire.Fire(main)
