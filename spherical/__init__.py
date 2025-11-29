@@ -7,4 +7,6 @@ from ._constants import (
     FAIR_ESM2_650M as FAIR_ESM2_650M,
 )
 
-from .esm2 import *  # noqa
+from . import esm2 as esm2
+
+from ._utils import split_name as split_name, make_name as make_name
