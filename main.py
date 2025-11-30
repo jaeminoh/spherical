@@ -3,9 +3,10 @@ import fire
 import pandas as pd
 from tqdm import tqdm
 from transformers import EsmForProteinFolding
+import torch
+from PDAnalysis import Deformation, Protein
 
 import spherical
-import torch
 
 
 def _get_protein(virus: str):
@@ -98,16 +99,24 @@ def merge_csv(csv_name: str, virus: str = "rvfv"):
     df = pd.read_csv(f"{csv_dir}/{csv_name}.csv")
     length = len(df)
 
-    methods = ["masked_marginal", "mutant_marginal", "wildtype_marginal", "contact"]
+    methods = [
+        "masked_marginal",
+        "mutant_marginal",
+        "wildtype_marginal",
+        "contact",
+        "rmsd",
+    ]
 
     for method in methods:
-        method_df = pd.read_csv(f"{csv_dir}/{csv_name}_{method}.csv")
-        df = df.merge(method_df, on="name")
+        csv_path = f"{csv_dir}/{csv_name}_{method}.csv"
+        if os.path.exists(csv_path):
+            method_df = pd.read_csv(csv_path)
+            df = df.merge(method_df, on="name")
 
     assert len(df) == length, (
         "Merged dataframe length does not match original dataframe length."
     )
-    df.to_csv(f"{csv_dir}/{csv_name}_merged.csv", index=False)
+    df.to_csv(f"{csv_dir}/{csv_name}_merged_{len(methods)}.csv", index=False)
 
 
 def fold_structures(csv_name: str, virus: str = "rvfv"):
@@ -144,12 +153,36 @@ def fold_structures(csv_name: str, virus: str = "rvfv"):
         )
 
 
+def compute_rmsd(
+    csv_name: str,
+    virus: str,
+    folding_method: str = "esmfold",
+    deformation_method: str = "rmsd",
+):
+    df, csv_dir = _load_csv(csv_name, virus)
+    wt = Protein(f"{csv_dir}/{folding_method}/wt.pdb")
+
+    # protein_kwargs = load_protein_kwargs(args)
+    # deform_kwargs = load_deformation_kwargs(args)
+
+    rmsd_list = []
+    # wt = load_protein_object([wt], **protein_kwargs)
+    for name in tqdm(df["name"]):
+        mt = Protein(f"{csv_dir}/{folding_method}/{name}.pdb")
+        rmsd = Deformation(wt, mt, method=deformation_method)
+        rmsd.run()
+        rmsd_list.append(rmsd.rmsd)
+    df["rmsd"] = rmsd_list
+    df.to_csv(f"{csv_dir}/{csv_name}_rmsd.csv", index=False)
+
+
 if __name__ == "__main__":
     fire.Fire(
         {
             "score": compute_scores,
             "contact": compute_contacts,
             "fold": fold_structures,
+            "rmsd": compute_rmsd,
             "merge": merge_csv,
         }
     )
