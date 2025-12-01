@@ -15,6 +15,8 @@ def _get_protein(virus: str):
         return spherical.RVFV_MP12
     elif virus == "cov2":
         return spherical.SARS_COV2_SPIKE
+    elif virus == "gfp":
+        return spherical.GFP
     else:
         raise ValueError(f"Unknown virus: {virus}")
 

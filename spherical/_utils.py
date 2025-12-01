@@ -22,11 +22,3 @@ def make_name(positions: list[int], aas: list[str]) -> str:
     Example: positions=[730, 650], aas=["A", "V"] -> "730A;650V"
     """
     return ";".join(f"{pos}{aa}" for pos, aa in zip(positions, aas))
-
-
-if __name__ == "__main__":
-    example = "730A"
-    p, m = split_name(example)
-    print(p, m)
-    reconstructed = make_name(p, m)
-    assert reconstructed == example

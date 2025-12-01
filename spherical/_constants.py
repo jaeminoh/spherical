@@ -6,6 +6,7 @@ AMINO_ACIDS = "ACDEFGHIKLMNPQRSTVWY"
 
 RVFV_MP12 = Protein(str(SeqIO.read("assets/RVFV.fasta", "fasta").seq))
 SARS_COV2_SPIKE = Protein(str(SeqIO.read("assets/cov2_spike.fasta", "fasta").seq))
+GFP = Protein(str(SeqIO.read("assets/gfp.fasta", "fasta").seq))
 
 ESM650M = "facebook/esm2_t33_650M_UR50D"
 ESMFOLD = "facebook/esmfold_v1"
