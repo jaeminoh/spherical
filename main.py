@@ -26,6 +26,21 @@ def _load_csv(csv_name: str, virus: str):
     return df, csv_dir
 
 
+def _drop(df: pd.DataFrame):
+    columns = df.columns
+    to_be_dropped = []
+    for col in columns:
+        if col.endswith("_y"):
+            to_be_dropped.append(col)
+    return df.drop(columns=to_be_dropped)
+
+
+def drop_y(csv_name: str, virus: str):
+    df, csv_dir = _load_csv(csv_name, virus)
+    df = _drop(df)
+    df.to_csv(f"{csv_dir}/{csv_name}_dropped.csv", index=False)
+
+
 def compute_scores(csv_name: str, method: str, virus: str):
     """Compute scores for mutations listed in CSV using specified method."""
     wt = _get_protein(virus)
@@ -51,6 +66,28 @@ def compute_scores(csv_name: str, method: str, virus: str):
 
     df[method] = scores
     df.to_csv(f"{csv_dir}/{csv_name}_{method}.csv", index=False)
+
+
+def compute_embedding_distances(csv_name: str, virus: str):
+    wt = _get_protein(virus)
+    df, csv_dir = _load_csv(csv_name, virus)
+
+    model, alphabet = spherical.esm2.load_model_and_alphabet(spherical.FAIR_ESM2_650M)
+    model = model.eval().cuda()
+
+    embedding_distance = spherical.esm2.EmbeddingDistance(model, alphabet)
+    wt_embedding = embedding_distance.get_embedding(wt.sequence)
+
+    diffs = []
+
+    for name in tqdm(df["name"]):
+        positions, aas = spherical.split_name(name)
+        mt = wt.mutate(positions, aas)
+        mt_embedding = embedding_distance.get_embedding(mt.sequence)
+        diffs.append(torch.abs(wt_embedding - mt_embedding).sum().item())
+
+    df["embedding_distance"] = diffs
+    df.to_csv(f"{csv_dir}/{csv_name}_embedding_distance.csv", index=False)
 
 
 def compute_contacts(csv_name: str, virus: str):
@@ -99,24 +136,27 @@ def merge_csv(csv_name: str, virus: str = "rvfv"):
     df = pd.read_csv(f"{csv_dir}/{csv_name}.csv")
     length = len(df)
 
+    df = _drop(df)
+
     methods = [
         "masked_marginal",
         "mutant_marginal",
         "wildtype_marginal",
         "contact",
         "rmsd",
+        "embedding_distance",
     ]
 
     for method in methods:
         csv_path = f"{csv_dir}/{csv_name}_{method}.csv"
         if os.path.exists(csv_path):
             method_df = pd.read_csv(csv_path)
-            df = df.merge(method_df, on="name")
+            df = method_df.merge(df, on="name")
 
     assert len(df) == length, (
         "Merged dataframe length does not match original dataframe length."
     )
-    df.to_csv(f"{csv_dir}/{csv_name}_merged_{len(methods)}.csv", index=False)
+    df.to_csv(f"{csv_dir}/{csv_name}_merged.csv", index=False)
 
 
 def fold_structures(csv_name: str, virus: str = "rvfv"):
@@ -162,11 +202,7 @@ def compute_rmsd(
     df, csv_dir = _load_csv(csv_name, virus)
     wt = Protein(f"{csv_dir}/{folding_method}/wt.pdb")
 
-    # protein_kwargs = load_protein_kwargs(args)
-    # deform_kwargs = load_deformation_kwargs(args)
-
     rmsd_list = []
-    # wt = load_protein_object([wt], **protein_kwargs)
     for name in tqdm(df["name"]):
         mt = Protein(f"{csv_dir}/{folding_method}/{name}.pdb")
         rmsd = Deformation(wt, mt, method=deformation_method)
@@ -180,9 +216,11 @@ if __name__ == "__main__":
     fire.Fire(
         {
             "score": compute_scores,
+            "embedding_distance": compute_embedding_distances,
             "contact": compute_contacts,
             "fold": fold_structures,
             "rmsd": compute_rmsd,
             "merge": merge_csv,
+            "drop": drop_y,
         }
     )

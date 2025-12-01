@@ -106,3 +106,41 @@ class ContactPredictor:
         with torch.no_grad():
             predictions = self.model.predict_contacts(batch_tokens)[0]
         return predictions
+
+
+class EmbeddingDistance:
+    def __init__(self, model: ESM2, alphabet: Alphabet):
+        self.model = model
+        self.alphabet = alphabet
+        self.batch_converter = alphabet.get_batch_converter()
+
+    def tokenize(self, names: list[str], sequences: list[str]):
+        *_, batch_tokens = self.batch_converter(list(zip(names, sequences)))
+        return batch_tokens.to(next(self.model.parameters()).device)
+
+    def get_embedding(self, wt, repr_layer: int = 33):
+        batch_tokens = self.tokenize(["wt"], [wt])
+        with torch.no_grad():
+            out = self.model(batch_tokens, [repr_layer])
+        return out["representations"][repr_layer].squeeze()
+
+    def get_embeddings(self, wt: str, mt: str, repr_layer: int = 33):
+        batch_tokens = self.tokenize(["wt", "mt"], [wt, mt])
+        with torch.no_grad():
+            out = self.model(batch_tokens, [repr_layer])
+        return out["representations"][repr_layer]
+
+    def __call__(self, wt: str, mt: str, repr_layer: int = 33):
+        embeddings = self.get_embeddings(wt, mt, repr_layer)
+        return torch.abs(embeddings[0] - embeddings[1]).sum().item()
+
+
+if __name__ == "__main__":
+    import spherical
+
+    model, alphabet = spherical.esm2.load_model_and_alphabet(spherical.FAIR_ESM2_650M)
+
+    score = EmbeddingDistance(model, alphabet)
+    wt = spherical.RVFV_MP12
+    mt = wt.mutate([10], ["A"])
+    print(score(wt.sequence, mt.sequence))
