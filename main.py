@@ -37,13 +37,13 @@ def _drop(df: pd.DataFrame):
     return df.drop(columns=to_be_dropped)
 
 
-def drop_y(csv_name: str, virus: str):
+def drop_y(virus: str, csv_name: str):
     df, csv_dir = _load_csv(csv_name, virus)
     df = _drop(df)
     df.to_csv(f"{csv_dir}/{csv_name}_dropped.csv", index=False)
 
 
-def compute_scores(csv_name: str, method: str, virus: str):
+def compute_scores(virus: str, csv_name: str, method: str):
     """Compute scores for mutations listed in CSV using specified method."""
     wt = _get_protein(virus)
     df, csv_dir = _load_csv(csv_name, virus)
@@ -70,7 +70,7 @@ def compute_scores(csv_name: str, method: str, virus: str):
     df.to_csv(f"{csv_dir}/{csv_name}_{method}.csv", index=False)
 
 
-def compute_embedding_distances(csv_name: str, virus: str):
+def compute_embedding_distances(virus: str, csv_name: str):
     wt = _get_protein(virus)
     df, csv_dir = _load_csv(csv_name, virus)
 
@@ -92,7 +92,7 @@ def compute_embedding_distances(csv_name: str, virus: str):
     df.to_csv(f"{csv_dir}/{csv_name}_embedding_distance.csv", index=False)
 
 
-def compute_contacts(csv_name: str, virus: str):
+def compute_contacts(virus: str, csv_name: str):
     """Compute contact differences for mutations listed in CSV."""
     wt = _get_protein(virus)
     df, csv_dir = _load_csv(csv_name, virus)
@@ -132,7 +132,7 @@ def compute_contacts(csv_name: str, virus: str):
     df.to_csv(f"{csv_dir}/{csv_name}_contact.csv", index=False)
 
 
-def merge_csv(csv_name: str, virus: str = "rvfv"):
+def merge_csv(virus: str, csv_name: str):
     """Merge CSV files for different scoring methods into a single CSV."""
     csv_dir = f"results/{virus}"
     df = pd.read_csv(f"{csv_dir}/{csv_name}.csv")
@@ -141,12 +141,13 @@ def merge_csv(csv_name: str, virus: str = "rvfv"):
     df = _drop(df)
 
     methods = [
+        "embedding_distance",
         "masked_marginal",
         "mutant_marginal",
         "wildtype_marginal",
         "contact",
         "rmsd",
-        "embedding_distance",
+        "strain",
     ]
 
     for method in methods:
@@ -161,7 +162,7 @@ def merge_csv(csv_name: str, virus: str = "rvfv"):
     df.to_csv(f"{csv_dir}/{csv_name}_merged.csv", index=False)
 
 
-def fold_structures(csv_name: str, virus: str = "rvfv"):
+def fold_structures(virus: str, csv_name: str):
     """Fold protein structures for mutations listed in CSV."""
     protein = _get_protein(virus)
     df, csv_dir = _load_csv(csv_name, virus)
@@ -196,22 +197,28 @@ def fold_structures(csv_name: str, virus: str = "rvfv"):
 
 
 def compute_rmsd(
-    csv_name: str,
     virus: str,
+    csv_name: str,
     folding_method: str = "esmfold",
     deformation_method: str = "rmsd",
 ):
     df, csv_dir = _load_csv(csv_name, virus)
     wt = Protein(f"{csv_dir}/{folding_method}/wt.pdb")
 
-    rmsd_list = []
+    list = []
     for name in tqdm(df["name"]):
         mt = Protein(f"{csv_dir}/{folding_method}/{name}.pdb")
-        rmsd = Deformation(wt, mt, method=deformation_method)
-        rmsd.run()
-        rmsd_list.append(rmsd.rmsd)
-    df["rmsd"] = rmsd_list
-    df.to_csv(f"{csv_dir}/{csv_name}_rmsd.csv", index=False)
+        deformation = Deformation(wt, mt, method=deformation_method)
+        deformation.run()
+        list.append(deformation)
+
+    if deformation_method == "rmsd":
+        list = [d.rmsd for d in list]
+    elif deformation_method == "strain":
+        list = [d.strain.mean() for d in list]
+
+    df[deformation_method] = list
+    df.to_csv(f"{csv_dir}/{csv_name}_{deformation_method}.csv", index=False)
 
 
 if __name__ == "__main__":
