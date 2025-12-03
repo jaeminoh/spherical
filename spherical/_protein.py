@@ -87,28 +87,3 @@ class Protein:
             mutated_aas.append(aa_list)
 
         return sequences, positions, mutated_aas
-
-
-if __name__ == "__main__":
-    import fire
-    import pandas as pd
-
-    import spherical
-
-    def main(virus: str, n: int = 200, num_substitutions: int = 5):
-        if virus == "rvfv":
-            protein = spherical.RVFV_MP12
-        elif virus == "cov2":
-            protein = spherical.SARS_COV2_SPIKE
-        _, positions, mutated_aas = protein.get_some_multiple_mutations(
-            n, num_substitutions, spherical.AMINO_ACIDS
-        )
-        names = []
-        for position, mt_aa in zip(positions, mutated_aas):
-            names.append(spherical.make_name(position, mt_aa))
-
-        pd.DataFrame({"name": names}).to_csv(
-            f"results/{virus}/{num_substitutions}subs.csv", index=False
-        )
-
-    fire.Fire(main)

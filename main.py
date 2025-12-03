@@ -37,6 +37,29 @@ def _drop(df: pd.DataFrame):
     return df.drop(columns=to_be_dropped)
 
 
+def get_mutations(
+    protein: str,
+    csv_name: str | None = None,
+    all_single: bool = True,
+    n: int | None = None,
+    num_mutations: int | None = None,
+):
+    wt = _get_protein(protein)
+    names = []
+    if all_single:
+        _, pos, aas = wt.get_all_single_mutations(spherical.AMINO_ACIDS)
+        for p, a in zip(pos, aas):
+            names.append(f"{p}{a}")
+        pd.DataFrame({"name": names}).to_csv(f"results/{protein}/all_single.csv")
+    else:
+        _, pos, aas = wt.get_some_multiple_mutations(
+            n, num_mutations, spherical.AMINO_ACIDS
+        )
+        for p, a in zip(pos, aas):
+            names.append(spherical.make_name(p, a))
+        pd.DataFrame({"name": names}).to_csv(f"results/{protein}/{csv_name}.csv")
+
+
 def drop_y(virus: str, csv_name: str):
     df, csv_dir = _load_csv(csv_name, virus)
     df = _drop(df)
@@ -231,5 +254,6 @@ if __name__ == "__main__":
             "rmsd": compute_rmsd,
             "merge": merge_csv,
             "drop": drop_y,
+            "mutate": get_mutations,
         }
     )
