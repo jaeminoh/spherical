@@ -57,7 +57,36 @@ def get_mutations(
         )
         for p, a in zip(pos, aas):
             names.append(spherical.make_name(p, a))
-        pd.DataFrame({"name": names}).to_csv(f"results/{protein}/{csv_name}.csv")
+        pd.DataFrame({"name": names}).to_csv(
+            f"results/{protein}/{csv_name}.csv", index=False
+        )
+
+
+def sort_and_crop(
+    protein: str,
+    csv_name: str,
+    method: str = "embedding_distance",
+    n: int = 100,
+):
+    methods_list = [
+        "masked_marginal",
+        "wildtype_marginal",
+        "mutant_marginal",
+        "embedding_distance",
+        "l1",
+        "l2",
+        "operator_l1",
+        "operator_l2",
+        "frobenius_1",
+        "frobenius_2",
+    ]
+    assert method in methods_list, (
+        f"Method {method} is not supported. Choose from {methods_list}."
+    )
+    df, csv_dir = _load_csv(f"{csv_name}_{method}", protein)
+    df = df.sort_values(by=method)
+    df.head(n).to_csv(f"{csv_dir}/{csv_name}_{method}_bottom{n}.csv", index=False)
+    df.tail(n).to_csv(f"{csv_dir}/{csv_name}_{method}_top{n}.csv", index=False)
 
 
 def drop_y(virus: str, csv_name: str):
@@ -103,15 +132,22 @@ def compute_embedding_distances(virus: str, csv_name: str):
     embedding_distance = spherical.esm2.EmbeddingDistance(model, alphabet)
     wt_embedding = embedding_distance.get_embedding(wt.sequence)
 
-    diffs = []
+    l1 = []
+    cosine = []
 
     for name in tqdm(df["name"]):
         positions, aas = spherical.split_name(name)
         mt = wt.mutate(positions, aas)
         mt_embedding = embedding_distance.get_embedding(mt.sequence)
-        diffs.append(torch.abs(wt_embedding - mt_embedding).sum().item())
+        l1.append(torch.abs(wt_embedding - mt_embedding).sum().item())
+        cosine.append(
+            torch.nn.functional.cosine_similarity(
+                wt_embedding.ravel(), mt_embedding.ravel(), dim=0
+            ).item()
+        )
 
-    df["embedding_distance"] = diffs
+    df["embedding_distance"] = l1
+    df["cosine_similarity"] = cosine
     df.to_csv(f"{csv_dir}/{csv_name}_embedding_distance.csv", index=False)
 
 
@@ -222,6 +258,7 @@ def fold_structures(virus: str, csv_name: str):
 def compute_rmsd(
     virus: str,
     csv_name: str,
+    override: bool = False,
     folding_method: str = "esmfold",
     deformation_method: str = "rmsd",
 ):
@@ -241,7 +278,9 @@ def compute_rmsd(
         list = [d.strain.mean() for d in list]
 
     df[deformation_method] = list
-    df.to_csv(f"{csv_dir}/{csv_name}_{deformation_method}.csv", index=False)
+    if not override:
+        csv_name = f"{csv_name}_{deformation_method}"
+    df.to_csv(f"{csv_dir}/{csv_name}.csv", index=False)
 
 
 if __name__ == "__main__":
@@ -255,5 +294,6 @@ if __name__ == "__main__":
             "merge": merge_csv,
             "drop": drop_y,
             "mutate": get_mutations,
+            "rank": sort_and_crop,
         }
     )
