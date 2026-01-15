@@ -17,6 +17,8 @@ def _get_protein(virus: str):
         return spherical.SARS_COV2_SPIKE
     elif virus == "gfp":
         return spherical.GFP
+    elif virus == "zh501":
+        return spherical.RVFV_ZH501
     else:
         raise ValueError(f"Unknown virus: {virus}")
 
@@ -28,11 +30,11 @@ def _load_csv(csv_name: str, virus: str):
     return df, csv_dir
 
 
-def _drop(df: pd.DataFrame):
+def _drop(df: pd.DataFrame, endswith: str = "_y"):
     columns = df.columns
     to_be_dropped = []
     for col in columns:
-        if col.endswith("_y"):
+        if col.endswith(endswith):
             to_be_dropped.append(col)
     return df.drop(columns=to_be_dropped)
 
@@ -89,16 +91,16 @@ def sort_and_crop(
     df.tail(n).to_csv(f"{csv_dir}/{csv_name}_{method}_top{n}.csv", index=False)
 
 
-def drop_y(virus: str, csv_name: str):
-    df, csv_dir = _load_csv(csv_name, virus)
-    df = _drop(df)
+def drop_columns(protein: str, csv_name: str, endswith: str = "_y"):
+    df, csv_dir = _load_csv(csv_name, protein)
+    df = _drop(df, endswith=endswith)
     df.to_csv(f"{csv_dir}/{csv_name}_dropped.csv", index=False)
 
 
-def compute_scores(virus: str, csv_name: str, method: str):
+def compute_scores(protein: str, csv_name: str, method: str):
     """Compute scores for mutations listed in CSV using specified method."""
-    wt = _get_protein(virus)
-    df, csv_dir = _load_csv(csv_name, virus)
+    wt = _get_protein(protein)
+    df, csv_dir = _load_csv(csv_name, protein)
 
     model, alphabet = spherical.esm2.load_model_and_alphabet(spherical.FAIR_ESM2_650M)
     model = model.eval().cuda()
@@ -122,9 +124,9 @@ def compute_scores(virus: str, csv_name: str, method: str):
     df.to_csv(f"{csv_dir}/{csv_name}_{method}.csv", index=False)
 
 
-def compute_embedding_distances(virus: str, csv_name: str):
-    wt = _get_protein(virus)
-    df, csv_dir = _load_csv(csv_name, virus)
+def compute_embedding_distances(protein: str, csv_name: str):
+    wt = _get_protein(protein)
+    df, csv_dir = _load_csv(csv_name, protein)
 
     model, alphabet = spherical.esm2.load_model_and_alphabet(spherical.FAIR_ESM2_650M)
     model = model.eval().cuda()
@@ -151,10 +153,10 @@ def compute_embedding_distances(virus: str, csv_name: str):
     df.to_csv(f"{csv_dir}/{csv_name}_embedding_distance.csv", index=False)
 
 
-def compute_contacts(virus: str, csv_name: str):
+def compute_contacts(protein: str, csv_name: str):
     """Compute contact differences for mutations listed in CSV."""
-    wt = _get_protein(virus)
-    df, csv_dir = _load_csv(csv_name, virus)
+    wt = _get_protein(protein)
+    df, csv_dir = _load_csv(csv_name, protein)
 
     model, alphabet = spherical.esm2.load_model_and_alphabet(spherical.FAIR_ESM2_650M)
     model = model.eval().cuda()
@@ -191,9 +193,9 @@ def compute_contacts(virus: str, csv_name: str):
     df.to_csv(f"{csv_dir}/{csv_name}_contact.csv", index=False)
 
 
-def merge_csv(virus: str, csv_name: str):
+def merge_csv(protein: str, csv_name: str):
     """Merge CSV files for different scoring methods into a single CSV."""
-    csv_dir = f"results/{virus}"
+    csv_dir = f"results/{protein}"
     df = pd.read_csv(f"{csv_dir}/{csv_name}.csv")
     length = len(df)
 
@@ -221,17 +223,17 @@ def merge_csv(virus: str, csv_name: str):
     df.to_csv(f"{csv_dir}/{csv_name}_merged.csv", index=False)
 
 
-def fold_structures(virus: str, csv_name: str):
+def fold_structures(protein: str, csv_name: str):
     """Fold protein structures for mutations listed in CSV."""
-    protein = _get_protein(virus)
-    df, csv_dir = _load_csv(csv_name, virus)
+    wt = _get_protein(protein)
+    df, csv_dir = _load_csv(csv_name, protein)
 
     model, tokenizer = spherical.esm2.load_model(
         EsmForProteinFolding, spherical.ESMFOLD
     )
     model.to("cuda")
 
-    csv_dir = f"results/{virus}"
+    csv_dir = f"results/{protein}"
     df = pd.read_csv(f"{csv_dir}/{csv_name}.csv")
 
     out_dir = f"{csv_dir}/esmfold"
@@ -239,9 +241,7 @@ def fold_structures(virus: str, csv_name: str):
 
     # wild type
     print("Folding wild type...")
-    spherical.esm2.fold_and_save(
-        model, tokenizer, protein.sequence, f"{out_dir}/wt.pdb"
-    )
+    spherical.esm2.fold_and_save(model, tokenizer, wt.sequence, f"{out_dir}/wt.pdb")
 
     # mutants
     for name in tqdm(df["name"]):
@@ -256,13 +256,13 @@ def fold_structures(virus: str, csv_name: str):
 
 
 def compute_rmsd(
-    virus: str,
+    protein: str,
     csv_name: str,
     override: bool = False,
     folding_method: str = "esmfold",
     deformation_method: str = "rmsd",
 ):
-    df, csv_dir = _load_csv(csv_name, virus)
+    df, csv_dir = _load_csv(csv_name, protein)
     wt = Protein(f"{csv_dir}/{folding_method}/wt.pdb")
 
     list = []
@@ -283,6 +283,36 @@ def compute_rmsd(
     df.to_csv(f"{csv_dir}/{csv_name}.csv", index=False)
 
 
+def compare_pdb_sequences(
+    protein: str, name1: str, name2: str, method: str = "alphafold"
+):
+    dir_path = f"results/{protein}/{method}"
+    path_pdb_1 = f"{dir_path}/{name1}.pdb"
+    path_pdb_2 = f"{dir_path}/{name2}.pdb"
+
+    positions, originals, mutated = spherical.compare_two_pdbs(path_pdb_1, path_pdb_2)
+    print("Positions:", positions)
+    print("Original residues:", originals)
+    print("Mutated residues:", mutated)
+
+
+def prepare_af2_dummy_csv(
+    protein: str,
+    csv_name: str,
+):
+    wt = _get_protein(protein)
+    df, csv_dir = _load_csv(csv_name, protein)
+    sequences = []
+    for name in df["name"]:
+        positions, aas = spherical.split_name(name)
+        mt = wt.mutate(positions, aas)
+        sequences.append(mt.sequence)
+
+    pd.DataFrame({"sample_name": df["name"], "sequence": sequences}).to_csv(
+        f"{csv_dir}/{csv_name}_dummy.csv", index=False
+    )
+
+
 if __name__ == "__main__":
     fire.Fire(
         {
@@ -292,8 +322,10 @@ if __name__ == "__main__":
             "fold": fold_structures,
             "rmsd": compute_rmsd,
             "merge": merge_csv,
-            "drop": drop_y,
+            "drop": drop_columns,
             "mutate": get_mutations,
             "rank": sort_and_crop,
+            "compare_pdb_sequences": compare_pdb_sequences,
+            "prepare_af2_csv": prepare_af2_dummy_csv,
         }
     )

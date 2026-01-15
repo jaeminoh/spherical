@@ -35,13 +35,13 @@ def compare_two_pdbs(
     assert len(seq_1) == len(seq_2), "Sequences have different lengths"
 
     positions = []
-    origianls = []
+    originals = []
     mutated = []
 
     for i, (res_1, res_2) in enumerate(zip(seq_1, seq_2)):
         if res_1 != res_2:
             positions.append(i)
-            origianls.append(res_1)
+            originals.append(res_1)
             mutated.append(res_2)
 
-    return positions, origianls, mutated
+    return positions, originals, mutated
