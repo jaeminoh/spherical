@@ -268,7 +268,10 @@ def compute_rmsd(
     list = []
     for name in tqdm(df["name"]):
         mt = Protein(f"{csv_dir}/{folding_method}/{name}.pdb")
-        deformation = Deformation(wt, mt, method=deformation_method)
+        if deformation_method == "local_strain":
+            deformation = Deformation(wt, mt, method="strain")
+        else:
+            deformation = Deformation(wt, mt, method=deformation_method)
         deformation.run()
         list.append(deformation)
 
@@ -276,6 +279,13 @@ def compute_rmsd(
         list = [d.rmsd for d in list]
     elif deformation_method == "strain":
         list = [d.strain.mean() for d in list]
+    elif deformation_method == "local_strain":
+        ds = list
+        list = []
+        for name, d in zip(df["name"], ds):
+            positions, _ = spherical.split_name(name)
+            local_strain = d.strain[positions]
+            list.append(local_strain.mean())
 
     df[deformation_method] = list
     if not override:
