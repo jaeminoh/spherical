@@ -1,5 +1,5 @@
 ## Data
-Data is available at [Google Drive Link](https://drive.google.com/file/d/1y7U_CARO4QsQe1hcKujVWZeV6LTm4NNl/view?usp=sharing).
+[Zenodo repository](https://zenodo.org/records/24287685)
 
 ## Install
 
